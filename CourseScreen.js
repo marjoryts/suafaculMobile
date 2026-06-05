@@ -52,7 +52,7 @@ export default function CourseScreen({ navigation }) {
       </ContentScroll>
 
       <ButtonWrapper>
-        <PrimaryButton onPress={() => console.log('Teste Vocacional clicado!')}>
+        <PrimaryButton onPress={() => navigation.navigate('VocationalTest')}>
           <ButtonText>Faça o Teste Vocacional!</ButtonText>
         </PrimaryButton>
       </ButtonWrapper>
