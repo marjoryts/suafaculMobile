@@ -8,11 +8,20 @@ import photoUsp from './assets/photoUsp.png';
 import photoFatec from './assets/photoFatec.png';
 import photoPiaget from './assets/photoPiaget.png';
 import photoMackenzie from './assets/photoMackenzie.png';
+import photoUnicamp from './assets/photoUnicamp.png.webp';
+import photoUnesp from './assets/photoUnesp.png.jpg';
+import photoPUC from './assets/photoPUC.png.jpg';
+import photoFGV from './assets/photoFGV.png.png';
 
 import photoEngenhariaSoftware from './assets/photoEngenhariaSoftware.png';
 import photoMedicina from './assets/photoMedicina.png';
+import photoDireito from './assets/photoDireito.png.jpg';
+import photoAdministracao from './assets/photoAdministracao.png.jpg';
+
 import photoEnem from './assets/photoEnem.png';
 import photoFuvest from './assets/photoFuvest.png';
+import photoVestibularUnicamp from './assets/photoVestibularUnicamp.png.jpg';
+import photoVestibularUnesp from './assets/photoVestibularUnesp.jpg';
 
 import { 
   SafeContainer, ScrollWrapper, Header, Avatar, WelcomeText, 
@@ -23,21 +32,29 @@ import {
 const PUBLICAS = [
   { id: '1', nome: "USP", imagem: photoUsp },
   { id: '2', nome: "Fatec", imagem: photoFatec },
+  { id: '3', nome: "Unicamp", imagem: photoUnicamp },
+  { id: '4', nome: "Unesp", imagem: photoUnesp },
 ];
 
 const PRIVADAS = [
-  { id: '3', nome: "Piaget", imagem: photoPiaget },
-  { id: '4', nome: "Mackenzie", imagem: photoMackenzie },
+  { id: '5', nome: "Piaget", imagem: photoPiaget },
+  { id: '6', nome: "Mackenzie", imagem: photoMackenzie },
+  { id: '7', nome: "PUC", imagem: photoPUC },
+  { id: '8', nome: "FGV", imagem: photoFGV },
 ];
 
 const CURSOS = [
-  { id: '5', nome: "Engenharia\nde Software", imagem: photoEngenhariaSoftware },
-  { id: '6', nome: "Medicina", imagem: photoMedicina },
+  { id: '9',  nome: "Engenharia\nde Software", imagem: photoEngenhariaSoftware },
+  { id: '10', nome: "Medicina", imagem: photoMedicina },
+  { id: '11', nome: "Direito", imagem: photoDireito },
+  { id: '12', nome: "Administração", imagem: photoAdministracao },
 ];
 
 const VESTIBULARES = [
-  { id: '7', nome: "", imagem: photoEnem },
-  { id: '8', nome: "", imagem: photoFuvest },
+  { id: '13', nome: "", imagem: photoEnem },
+  { id: '14', nome: "", imagem: photoFuvest },
+  { id: '15', nome: "", imagem: photoVestibularUnicamp },
+  { id: '16', nome: "", imagem: photoVestibularUnesp },
 ];
 
 export default function MainScreen({ navigation }) {

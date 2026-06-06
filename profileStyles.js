@@ -3,7 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 export const PurpleBackground = styled(SafeAreaView)`
   flex: 1;
-  background-color: #5A189A;
+  background-color: ${(props) => props.topBg || '#5A189A'};
 `;
 
 export const TopSection = styled.View`
@@ -24,13 +24,13 @@ export const BackButton = styled.TouchableOpacity`
   width: 40px;
   height: 40px;
   border-radius: 20px;
-  background-color: #EAEAEA;
+  background-color: ${(props) => props.backBtnBg || '#EAEAEA'};
   justify-content: center;
   align-items: center;
 `;
 
 export const EditProfileText = styled.Text`
-  color: #FFFFFF;
+  color: #ffffff;
   font-size: 16px;
   font-family: 'Inter-Medium';
   text-decoration-line: underline;
@@ -49,13 +49,13 @@ export const UserName = styled.Text`
   font-size: 30px;
   line-height: 40px;
   letter-spacing: 0.2px;
-  color: #FFFFFF;
+  color: #ffffff;
   margin-top: 15px;
 `;
 
 export const BottomSection = styled.View`
   flex: 1;
-  background-color: #F4F7FA;
+  background-color: ${(props) => props.bg || '#F4F7FA'};
   border-top-left-radius: 35px;
   border-top-right-radius: 35px;
   padding: 35px 30px;
@@ -64,7 +64,7 @@ export const BottomSection = styled.View`
 export const SettingsTitle = styled.Text`
   font-family: 'Inter-Bold';
   font-size: 24px;
-  color: #401A65;
+  color: ${(props) => props.titleColor || '#401A65'};
   margin-bottom: 30px;
 `;
 
@@ -88,13 +88,13 @@ export const MenuText = styled.Text`
   font-family: 'Inter-SemiBold';
   font-weight: 600;
   font-size: 22px;
-  color: #401A65;
+  color: ${(props) => props.textColor || '#401A65'};
   flex: 1;
 `;
 
 export const MenuStatus = styled.Text`
   font-family: 'Inter-SemiBold';
   font-size: 16px;
-  color: #1A1A1A3D;
+  color: ${(props) => props.statusColor || '#1A1A1A3D'};
   margin-right: 10px;
 `;
