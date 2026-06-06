@@ -118,7 +118,9 @@ export default function MainScreen({ navigation }) {
           data={VESTIBULARES} keyExtractor={item => item.id} horizontal showsHorizontalScrollIndicator={false}
           contentContainerStyle={{ paddingLeft: 20, marginBottom: 25 }}
           renderItem={({ item }) => (
-            <CardContainer style={{ backgroundColor: '#FFFFFF', padding: 15, borderRadius: 20, opacity: 0.6 }}>
+            <CardContainer 
+              onPress={() => navigation.navigate('Vestibulares')} 
+              style={{ backgroundColor: '#FFFFFF', padding: 15, borderRadius: 20, opacity: 0.6 }}>
               <Image source={item.imagem} style={{ width: '100%', height: '100%', resizeMode: 'contain' }} />
               <Ionicons name="heart-outline" size={24} color="#401A65" style={{ position: 'absolute', bottom: 10, right: 10 }} />
             </CardContainer>
