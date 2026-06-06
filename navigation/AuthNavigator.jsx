@@ -13,6 +13,7 @@ import ProfileScreen from '../ProfileScreen';
 import VocationalTestScreen from '../screens/VocationalTestScreen';
 import VocationalResultScreen from '../screens/VocationalResultScreen';
 import VestibularesScreen from '../screens/VestibularesScreen';
+import VocationalIntroScreen from '../screens/VocationalIntroScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -34,6 +35,7 @@ export default function AuthNavigator() {
         <Stack.Screen name="VocationalTest" component={VocationalTestScreen} />
         <Stack.Screen name="VocationalResult" component={VocationalResultScreen} />
         <Stack.Screen name="Vestibulares" component={VestibularesScreen} />
+        <Stack.Screen name="VocationalIntro" component={VocationalIntroScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
