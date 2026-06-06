@@ -1,4 +1,3 @@
-// screens/VestibularesScreen.jsx
 import React, { useState } from 'react';
 import {
   View,
@@ -10,15 +9,14 @@ import {
   Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import BellImage from '../assets/sign.webp';
 
-// Data atual
 const TODAY = new Date();
 const WEEK_DAYS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab', 'Dom'];
 
 function getWeekDays() {
   const days = [];
-  const dayOfWeek = TODAY.getDay(); // 0 = domingo
-  // Ajusta para semana começar na segunda
+  const dayOfWeek = TODAY.getDay(); 
   const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
   for (let i = 0; i < 7; i++) {
     const d = new Date(TODAY);
@@ -111,11 +109,10 @@ export default function VestibularesScreen({ navigation }) {
               <Text style={styles.bannerBtnText}>Ativar</Text>
             </TouchableOpacity>
           </View>
-          {/* Sino emoji 3D */}
-          <Text style={styles.bannerEmoji}>🔔</Text>
+          {}
+          <Image source={BellImage} style={styles.bannerBell} resizeMode="contain" />
         </View>
 
-        {/* ── Dias faltantes ── */}
         <View style={styles.sectionRow}>
           <Text style={styles.sectionTitle}>Dias faltantes</Text>
           <TouchableOpacity>
@@ -256,11 +253,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
   },
-  bannerEmoji: {
-    fontSize: 64,
-    marginLeft: 8,
-    marginRight: -8,
-  },
+  bannerBell: {
+  width: 100,
+  height: 100,
+  marginLeft: 8,
+  marginRight: -8,
+},
 
   // Seção
   sectionRow: {
