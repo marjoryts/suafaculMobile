@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import FotoPerfil from '../assets/AvatarPhoto.png';
+import { useThemeContext } from '../context/ThemeContext';
 
 const CATEGORIES = [
   { rank: 1, label: 'Ciência e Tecnologia', score: 8, max: 10, bg: '#F0DCF7', bar: '#BF93EA', circle: '#E8C8F5' },
@@ -59,6 +60,7 @@ function ResultCard({ item, index }) {
 }
 
 export default function VocationalResultScreen({ navigation, route }) {
+  const theme = useThemeContext();
   const bannerAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -71,24 +73,34 @@ export default function VocationalResultScreen({ navigation, route }) {
   }, []);
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: theme.bg }]}>
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
+
+        {/* ── Botão voltar ── */}
+        <TouchableOpacity
+          onPress={() => navigation?.goBack()}
+          style={[styles.backBtn, { borderColor: theme.backBtnColor, backgroundColor: theme.backBtnBg }]}
+        >
+          <Ionicons name="chevron-back" size={22} color={theme.backBtnColor} />
+        </TouchableOpacity>
+
         {/* ── Header com avatar ── */}
         <View style={styles.header}>
           <Image source={FotoPerfil} style={styles.avatar} />
           <View>
-            <Text style={styles.helloName}>Olá Júlio,</Text>
-            <Text style={styles.helloSub}>Que bom te ver de novo!</Text>
+            <Text style={[styles.helloName, { color: theme.textPrimary }]}>Olá Júlio,</Text>
+            <Text style={[styles.helloSub, { color: theme.textSecondary }]}>Que bom te ver de novo!</Text>
           </View>
         </View>
 
-        {/* ── Banner "Você finalizou" ── */}
+        {/* ── Banner ── */}
         <Animated.View
           style={[
             styles.banner,
+            { backgroundColor: theme.iconBg },
             {
               opacity: bannerAnim,
               transform: [{ scale: bannerAnim.interpolate({ inputRange: [0, 1], outputRange: [0.85, 1] }) }],
@@ -99,8 +111,7 @@ export default function VocationalResultScreen({ navigation, route }) {
           <Text style={styles.bannerText}>Você finalizou{'\n'}o Teste Vocacional</Text>
         </Animated.View>
 
-        {/* ── Resultados ── */}
-        <Text style={styles.sectionTitle}>Resultados recentes</Text>
+        <Text style={[styles.sectionTitle, { color: theme.titleColor }]}>Resultados recentes</Text>
 
         <View style={styles.cards}>
           {CATEGORIES.map((item, i) => (
@@ -110,10 +121,10 @@ export default function VocationalResultScreen({ navigation, route }) {
 
       </ScrollView>
 
-      {/* ── Botão fixo no fundo ── */}
-      <View style={styles.footer}>
+      {/* ── Botão fixo ── */}
+      <View style={[styles.footer, { backgroundColor: theme.bg }]}>
         <TouchableOpacity
-          style={styles.ctaBtn}
+          style={[styles.ctaBtn, { backgroundColor: theme.iconBg }]}
           onPress={() => navigation?.navigate('MainScreen')}
           activeOpacity={0.85}
         >
@@ -125,16 +136,22 @@ export default function VocationalResultScreen({ navigation, route }) {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F2F2F2' },
-
+  safe: { flex: 1 },
   scroll: {
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 100,
     gap: 20,
   },
-
-  // Header
+  backBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -150,17 +167,12 @@ const styles = StyleSheet.create({
   helloName: {
     fontSize: 17,
     fontWeight: '700',
-    color: '#2B282D',
   },
   helloSub: {
     fontSize: 13,
-    color: '#757575',
     marginTop: 2,
   },
-
-  // Banner roxo
   banner: {
-    backgroundColor: '#5A189A',
     borderRadius: 20,
     paddingVertical: 18,
     paddingHorizontal: 24,
@@ -168,9 +180,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 16,
   },
-  bannerEmoji: {
-    fontSize: 36,
-  },
+  bannerEmoji: { fontSize: 36 },
   bannerText: {
     fontSize: 16,
     fontWeight: '700',
@@ -178,17 +188,11 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     flex: 1,
   },
-
-  // Seção
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#401A65',
   },
-
-  // Cards
   cards: { gap: 12 },
-
   card: {
     borderRadius: 16,
     padding: 16,
@@ -208,10 +212,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#2B282D',
   },
-  cardContent: {
-    flex: 1,
-    gap: 6,
-  },
+  cardContent: { flex: 1, gap: 6 },
   cardLabel: {
     fontSize: 14,
     fontWeight: '600',
@@ -232,8 +233,6 @@ const styles = StyleSheet.create({
     color: '#632E97',
     fontWeight: '500',
   },
-
-  // Footer
   footer: {
     position: 'absolute',
     bottom: 0,
@@ -242,14 +241,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 28,
     paddingTop: 12,
-    backgroundColor: '#F2F2F2',
   },
   ctaBtn: {
-    backgroundColor: '#5A189A',
     borderRadius: 28,
     paddingVertical: 16,
     alignItems: 'center',
-    shadowColor: '#5A189A',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,

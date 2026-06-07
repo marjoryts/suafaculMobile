@@ -10,11 +10,14 @@ import {
   Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, fonts, radius, spacing } from '../theme';
+import { spacing } from '../theme';
+import { useThemeContext } from '../context/ThemeContext';
 
 const { width, height } = Dimensions.get('window');
 
 export default function VocationalIntroScreen({ navigation }) {
+  const theme = useThemeContext();
+
   const imgAnim = useRef(new Animated.Value(0)).current;
   const textAnim = useRef(new Animated.Value(0)).current;
   const btnAnim = useRef(new Animated.Value(0)).current;
@@ -28,13 +31,15 @@ export default function VocationalIntroScreen({ navigation }) {
   }, []);
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: theme.bg }]}>
 
-      <TouchableOpacity style={styles.backBtn} onPress={() => navigation?.goBack()}>
-        <Ionicons name="chevron-back" size={20} color="#5B21B6" />
+      <TouchableOpacity
+        style={[styles.backBtn, { borderColor: theme.backBtnColor, backgroundColor: theme.backBtnBg }]}
+        onPress={() => navigation?.goBack()}
+      >
+        <Ionicons name="chevron-back" size={20} color={theme.backBtnColor} />
       </TouchableOpacity>
 
-      {/* ── Imagem central ── */}
       <Animated.View style={[
         styles.imageWrapper,
         {
@@ -55,11 +60,11 @@ export default function VocationalIntroScreen({ navigation }) {
       </Animated.View>
 
       <View style={styles.bottom}>
-        <Animated.Text style={[styles.title, { opacity: textAnim }]}>
+        <Animated.Text style={[styles.title, { opacity: textAnim, color: theme.titleColor }]}>
           Escolha as opções que{'\n'}mais combinam com você.
         </Animated.Text>
 
-        <Animated.View style={{ opacity: btnAnim, width:'60%'}}>
+        <Animated.View style={{ opacity: btnAnim, width: '60%' }}>
           <TouchableOpacity
             style={styles.btn}
             onPress={() => navigation?.navigate('VocationalTest')}
@@ -77,22 +82,18 @@ export default function VocationalIntroScreen({ navigation }) {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: '#F2F2F2',
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.xl,
   },
-
   backBtn: {
     width: 36,
     height: 36,
     borderRadius: 18,
     borderWidth: 1.5,
-    borderColor: '#5B21B6',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: spacing.md,
+    marginBottom: 12,
   },
-
   imageWrapper: {
     flex: 1,
     alignItems: 'center',
@@ -102,7 +103,6 @@ const styles = StyleSheet.create({
     width: width * 0.85,
     height: height * 0.45,
   },
-
   bottom: {
     alignItems: 'center',
     gap: spacing.xl,
@@ -111,7 +111,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 22,
     fontWeight: '700',
-    color: '#5B21B6',
     textAlign: 'center',
     lineHeight: 32,
   },

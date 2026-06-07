@@ -9,9 +9,10 @@ import {
   Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
- 
+import { useThemeContext } from '../context/ThemeContext';
+
 const { width } = Dimensions.get('window');
- 
+
 const QUESTIONS = [
   "Prefiro criar novas ideias do que seguir instruções prontas.",
   "Gosto de ajudar pessoas a resolver seus problemas.",
@@ -29,7 +30,7 @@ const QUESTIONS = [
   "Tenho interesse em atividades que impactam positivamente a sociedade.",
   "Sinto motivação ao aprender algo completamente novo.",
 ];
- 
+
 const OPTIONS = [
   { label: 'Concordo plenamente',   color: '#448236', value: 5 },
   { label: 'Concordo parcialmente', color: '#7BC142', value: 4 },
@@ -37,16 +38,16 @@ const OPTIONS = [
   { label: 'Discordo parcialmente', color: '#F8962C', value: 2 },
   { label: 'Discordo plenamente',   color: '#F05435', value: 1 },
 ];
- 
+
 export default function VocationalTestScreen({ navigation }) {
+  const theme = useThemeContext();
   const [current, setCurrent] = useState(0);
   const [answers, setAnswers] = useState({});
   const [selected, setSelected] = useState(null);
   const progressAnim = useRef(new Animated.Value(0)).current;
- 
+
   const total = QUESTIONS.length;
-  const progress = (current + 1) / total;
- 
+
   const animateProgress = (val) => {
     Animated.timing(progressAnim, {
       toValue: val,
@@ -54,67 +55,59 @@ export default function VocationalTestScreen({ navigation }) {
       useNativeDriver: false,
     }).start();
   };
- 
-  const handleSelect = (option) => {
-    setSelected(option.value);
-  };
- 
+
+  const handleSelect = (option) => setSelected(option.value);
+
   const handleNext = () => {
     if (selected === null) return;
- 
     const newAnswers = { ...answers, [current]: selected };
     setAnswers(newAnswers);
     setSelected(null);
- 
     if (current + 1 < total) {
       animateProgress((current + 2) / total);
       setCurrent(current + 1);
     } else {
-      // Navega para resultado passando as respostas
       navigation?.navigate('VocationalResult', { answers: newAnswers });
     }
   };
- 
+
   const handlePrev = () => {
     if (current === 0) return;
     setSelected(answers[current - 1] ?? null);
     animateProgress((current) / total);
     setCurrent(current - 1);
   };
- 
+
   const progressWidth = progressAnim.interpolate({
     inputRange: [0, 1],
     outputRange: ['0%', '100%'],
   });
- 
+
   const isLast = current + 1 === total;
- 
+
   return (
-    <SafeAreaView style={styles.safe}>
- 
-      {/* ── Header ── */}
+    <SafeAreaView style={[styles.safe, { backgroundColor: theme.bg }]}>
+
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation?.goBack()} style={styles.backBtn}>
-          <Ionicons name="chevron-back" size={22} color="#5B21B6" />
+        <TouchableOpacity
+          onPress={() => navigation?.goBack()}
+          style={[styles.backBtn, { borderColor: theme.backBtnColor, backgroundColor: theme.backBtnBg }]}
+        >
+          <Ionicons name="chevron-back" size={22} color={theme.backBtnColor} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Teste Vocacional</Text>
+        <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>Teste Vocacional</Text>
         <TouchableOpacity onPress={() => navigation?.goBack()} style={styles.closeBtn}>
           <Ionicons name="close" size={20} color="#fff" />
         </TouchableOpacity>
       </View>
- 
-      {/* ── Barra de progresso ── */}
-      <View style={styles.progressTrack}>
+
+      <View style={[styles.progressTrack, { backgroundColor: theme.isDarkMode ? '#3A3A3A' : '#E5E7EB' }]}>
         <Animated.View style={[styles.progressFill, { width: progressWidth }]} />
       </View>
- 
-      {/* ── Corpo ── */}
+
       <View style={styles.body}>
- 
-        {/* Pergunta */}
-        <Text style={styles.question}>{QUESTIONS[current]}</Text>
- 
-        {/* Opções */}
+        <Text style={[styles.question, { color: theme.titleColor }]}>{QUESTIONS[current]}</Text>
+
         <View style={styles.options}>
           {OPTIONS.map((opt) => (
             <TouchableOpacity
@@ -127,54 +120,45 @@ export default function VocationalTestScreen({ navigation }) {
               onPress={() => handleSelect(opt)}
               activeOpacity={0.85}
             >
-              <Text style={[
-                styles.optionText,
-                { color: opt.textColor ?? '#FFFFFF' },
-              ]}>
+              <Text style={[styles.optionText, { color: opt.textColor ?? '#FFFFFF' }]}>
                 {opt.label}
               </Text>
             </TouchableOpacity>
           ))}
         </View>
- 
-        {/* Reportar problema */}
+
         <TouchableOpacity>
-          <Text style={styles.report}>Reportar problema</Text>
+          <Text style={[styles.report, { color: theme.textSecondary }]}>Reportar problema</Text>
         </TouchableOpacity>
       </View>
- 
-      {/* ── Footer ── */}
+
       <View style={styles.footer}>
         <TouchableOpacity
-          style={[styles.verBtn, selected === null && styles.verBtnDisabled]}
+          style={[styles.verBtn, { backgroundColor: theme.iconBg }, selected === null && styles.verBtnDisabled]}
           onPress={handleNext}
           activeOpacity={0.85}
           disabled={selected === null}
         >
-          <Text style={styles.verBtnText}>
-            {isLast ? 'Ver resultado' : 'Próxima'}
-          </Text>
+          <Text style={styles.verBtnText}>{isLast ? 'Ver resultado' : 'Próxima'}</Text>
         </TouchableOpacity>
- 
+
         <View style={styles.pagination}>
           <TouchableOpacity onPress={handlePrev} disabled={current === 0}>
-            <Ionicons name="chevron-back" size={20} color={current === 0 ? '#ccc' : '#5B21B6'} />
+            <Ionicons name="chevron-back" size={20} color={current === 0 ? '#ccc' : theme.backBtnColor} />
           </TouchableOpacity>
-          <Text style={styles.pageText}>{current + 1} / {total}</Text>
+          <Text style={[styles.pageText, { color: theme.textSecondary }]}>{current + 1} / {total}</Text>
           <TouchableOpacity onPress={handleNext} disabled={selected === null}>
-            <Ionicons name="chevron-forward" size={20} color={selected === null ? '#ccc' : '#5B21B6'} />
+            <Ionicons name="chevron-forward" size={20} color={selected === null ? '#ccc' : theme.backBtnColor} />
           </TouchableOpacity>
         </View>
       </View>
- 
+
     </SafeAreaView>
   );
 }
- 
+
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#FFFFFF' },
- 
-  // Header
+  safe: { flex: 1 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -186,14 +170,12 @@ const styles = StyleSheet.create({
     width: 36, height: 36,
     borderRadius: 18,
     borderWidth: 1.5,
-    borderColor: '#5B21B6',
     alignItems: 'center',
     justifyContent: 'center',
   },
   headerTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1F1535',
   },
   closeBtn: {
     width: 36, height: 36,
@@ -202,11 +184,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
- 
-  // Progresso
   progressTrack: {
     height: 6,
-    backgroundColor: '#E5E7EB',
     marginHorizontal: 16,
     borderRadius: 3,
     overflow: 'hidden',
@@ -217,8 +196,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#F8962C',
     borderRadius: 3,
   },
- 
-  // Corpo
   body: {
     flex: 1,
     paddingHorizontal: 20,
@@ -227,13 +204,10 @@ const styles = StyleSheet.create({
   question: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#5B21B6',
     lineHeight: 26,
     marginBottom: 8,
   },
-  options: {
-    gap: 10,
-  },
+  options: { gap: 10 },
   optionBtn: {
     borderRadius: 28,
     paddingVertical: 14,
@@ -256,25 +230,19 @@ const styles = StyleSheet.create({
   },
   report: {
     fontSize: 12,
-    color: '#757575',
     marginTop: 4,
   },
- 
-  // Footer
   footer: {
     paddingHorizontal: 20,
     paddingBottom: 24,
     gap: 12,
   },
   verBtn: {
-    backgroundColor: '#5B21B6',
     borderRadius: 28,
     paddingVertical: 14,
     alignItems: 'center',
   },
-  verBtnDisabled: {
-    opacity: 0.45,
-  },
+  verBtnDisabled: { opacity: 0.45 },
   verBtnText: {
     color: '#FFFFFF',
     fontSize: 15,
@@ -288,7 +256,6 @@ const styles = StyleSheet.create({
   },
   pageText: {
     fontSize: 13,
-    color: '#757575',
     fontWeight: '500',
     minWidth: 40,
     textAlign: 'center',
