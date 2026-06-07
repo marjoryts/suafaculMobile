@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AvatarImg from './assets/AvatarPhoto.png';
+import { useThemeContext } from './context/ThemeContext';
 
 export default function EditProfileScreen({ navigation }) {
   const [name, setName] = useState('Júlio César');
@@ -120,7 +121,7 @@ const styles = StyleSheet.create({
   },
   saveText: {
     color: '#fff',
-    fontSize: 16,               // igual ao EditProfileText do profileStyles
+    fontSize: 16,               
     fontWeight: '500',
     textDecorationLine: 'underline',
   },
@@ -131,7 +132,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   avatar: {
-    width: 120,                 // igual ao ProfileImage do profileStyles
+    width: 120,                
     height: 120,
     borderRadius: 60,
     borderWidth: 3,

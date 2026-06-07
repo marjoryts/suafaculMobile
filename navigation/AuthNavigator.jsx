@@ -16,8 +16,7 @@ import VestibularesScreen from '../screens/VestibularesScreen';
 import VocationalIntroScreen from '../screens/VocationalIntroScreen';
 import FavoritesScreen from '../FavoritesScreen';
 import EditProfileScreen from '../EditProfileScreen';
-
-import VestibularScreen from '../VestibularScreen'; // <-- import adicionado
+import VestibularScreen from '../VestibularScreen';
 
 const Stack = createNativeStackNavigator();
 

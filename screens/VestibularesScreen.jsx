@@ -92,7 +92,6 @@ export default function VestibularesScreen({ navigation }) {
           })}
         </View>
 
-        {/* ── Banner lembrete ── */}
         <View style={styles.banner}>
           <View style={styles.bannerContent}>
             <Text style={styles.bannerTitle}>Definir um lembrete</Text>

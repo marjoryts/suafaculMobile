@@ -22,9 +22,7 @@ export default function CourseScreen({ route, navigation }) {
   const theme = useThemeContext();
   const { item, type } = route.params || {};
 
-  // Descrições ampliadas e personalizadas por id (cursos e faculdades)
   const descriptions = {
-    // Cursos
     '9': {
       titulo: 'Engenharia de Software',
       aprendizado:
@@ -54,7 +52,6 @@ export default function CourseScreen({ route, navigation }) {
         'Introdução à Administração; Contabilidade; Finanças; Marketing; Gestão de Pessoas; Economia; Estatística Aplicada; Gestão de Operações; Planejamento Estratégico; Empreendedorismo; Gestão de Projetos; Análise de Dados para Negócios; Estágio Supervisionado.'
     },
 
-    // Faculdades públicas (descrições ampliadas)
     '1': {
       titulo: 'USP',
       aprendizado:
@@ -70,7 +67,7 @@ export default function CourseScreen({ route, navigation }) {
         'Disciplinas técnicas e aplicadas; projetos integradores; estágios supervisionados; ênfase em tecnologia, inovação e empregabilidade. Currículos orientados para demandas do mercado regional e nacional.'
     },
 
-    // Faculdades privadas — descrições ampliadas e personalizadas
+
     '5': {
       titulo: 'Faculdade Piaget',
       aprendizado:

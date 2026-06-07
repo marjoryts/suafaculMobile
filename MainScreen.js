@@ -173,7 +173,7 @@ export default function MainScreen({ navigation }) {
           </WelcomeText>
 
           <TouchableOpacity
-            onPress={() => navigation.navigate('Favorites', { favorites })}
+            onPress={() => navigation.navigate('Favorites')}
             style={{ marginLeft: 12 }}
           >
             <Ionicons name="heart" size={22} color="#FF4D6D" />
