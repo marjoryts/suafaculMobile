@@ -69,7 +69,6 @@ export default function VestibularesScreen({ navigation }) {
           </View>
         </View>
 
-        {/* ── Calendário semanal ── */}
         <View style={styles.calendar}>
           {weekDays.map((d, i) => {
             const day = d.getDate();
@@ -216,7 +215,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
 
-  // Banner
+
   banner: {
     backgroundColor: '#F59E0B',
     borderRadius: 20,
