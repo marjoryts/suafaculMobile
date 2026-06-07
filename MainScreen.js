@@ -44,25 +44,35 @@ const PRIVADAS = [
 ];
 
 const CURSOS = [
-  { id: '9',  nome: "Engenharia\nde Software", imagem: photoEngenhariaSoftware },
-  { id: '10', nome: "Medicina",                imagem: photoMedicina },
-  { id: '11', nome: "Direito",                 imagem: photoDireito },
-  { id: '12', nome: "Administração",           imagem: photoAdministracao },
+  { id: '9',  nome: "Engenharia\nde Software", imagem: photoEngenhariaSoftware, tipo: 'curso' },
+  { id: '10', nome: "Medicina",                imagem: photoMedicina, tipo: 'curso' },
+  { id: '11', nome: "Direito",                 imagem: photoDireito, tipo: 'curso' },
+  { id: '12', nome: "Administração",           imagem: photoAdministracao, tipo: 'curso' },
 ];
 
 const VESTIBULARES = [
-  { id: '13', imagem: photoEnem },
-  { id: '14', imagem: photoFuvest },
-  { id: '15', imagem: photoVestibularUnicamp },
-  { id: '16', imagem: photoVestibularUnesp },
+  { id: '13', nome: 'ENEM', imagem: photoEnem, tipo: 'vestibular' },
+  { id: '14', nome: 'FUVEST', imagem: photoFuvest, tipo: 'vestibular' },
+  { id: '15', nome: 'Vestibular Unicamp', imagem: photoVestibularUnicamp, tipo: 'vestibular' },
+  { id: '16', nome: 'Vestibular Unesp', imagem: photoVestibularUnesp, tipo: 'vestibular' },
 ];
 
 export default function MainScreen({ navigation }) {
   const theme = useThemeContext();
 
   const renderCurso = ({ item }) => (
-    <CardContainer onPress={() => navigation && navigation.navigate('CourseScreen')}>
-      <BackgroundImage source={item.imagem} resizeMode="cover">
+    <CardContainer
+      onPress={() => {
+        // Cursos e Faculdades usam a mesma tela (CourseScreen) mas com tipo diferente
+        if (item.tipo === 'curso') {
+          navigation && navigation.navigate('CourseScreen', { item, type: 'curso' });
+        } else {
+          navigation && navigation.navigate('CourseScreen', { item, type: 'faculdade' });
+        }
+      }}
+      style={{ backgroundColor: theme.cardBg, padding: 0, borderRadius: 20, overflow: 'hidden' }}
+    >
+      <BackgroundImage source={item.imagem} resizeMode="cover" imageStyle={{ borderRadius: 20 }} opacity={0.9}>
         {item.nome ? <CardTitle>{item.nome}</CardTitle> : null}
         <Ionicons
           name="heart-outline"
@@ -144,15 +154,29 @@ export default function MainScreen({ navigation }) {
           data={VESTIBULARES} keyExtractor={item => item.id} horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{ paddingLeft: 20, marginBottom: 25 }}
-          renderItem={({ item }) => (
-            <CardContainer
-              onPress={() => navigation.navigate('Vestibulares')}
-              style={{ backgroundColor: theme.cardBg, padding: 15, borderRadius: 20, opacity: 0.85 }}
-            >
-              <Image source={item.imagem} style={{ width: '100%', height: '100%', resizeMode: 'contain' }} />
-              <Ionicons name="heart-outline" size={24} color="#401A65" style={{ position: 'absolute', bottom: 10, right: 10 }} />
-            </CardContainer>
-          )}
+          renderItem={({ item }) => {
+            const isFuvest = item.nome === 'FUVEST';
+            return (
+              <CardContainer
+                onPress={() => navigation.navigate('VestibularScreen', { item })}
+                style={{ backgroundColor: theme.cardBg, padding: 0, borderRadius: 20, overflow: 'hidden' }}
+              >
+                {/* Ajuste: resizeMode cover para a maioria; reduzir zoom para FUVEST */}
+                <Image
+                  source={item.imagem}
+                  resizeMode="cover"
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    borderRadius: 20,
+                    transform: isFuvest ? [{ scale: 0.88 }] : [{ scale: 1 }],
+                    alignSelf: 'center'
+                  }}
+                />
+                <Ionicons name="heart-outline" size={24} color="#401A65" style={{ position: 'absolute', bottom: 10, right: 10 }} />
+              </CardContainer>
+            );
+          }}
         />
 
       </ScrollWrapper>
