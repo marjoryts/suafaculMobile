@@ -1,4 +1,3 @@
-// EditProfileScreen.js
 import React, { useState } from 'react';
 import {
   View,
@@ -8,154 +7,196 @@ import {
   ScrollView,
   Image,
   StyleSheet,
-  Platform
+  SafeAreaView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useThemeContext } from './context/ThemeContext';
 import AvatarImg from './assets/AvatarPhoto.png';
 
 export default function EditProfileScreen({ navigation }) {
-  const theme = useThemeContext();
-
   const [name, setName] = useState('Júlio César');
   const [email, setEmail] = useState('julio@example.com');
   const [phone, setPhone] = useState('+55 11 9XXXX-XXXX');
   const [password, setPassword] = useState('');
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.bg }]}>
-      {/* Header idêntico ao perfil */}
-      <View style={[styles.header, { borderBottomColor: theme.divider || '#eee' }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerButton}>
-          <Ionicons name="chevron-back" size={24} color={theme.textPrimary} />
-        </TouchableOpacity>
-
-        <View style={styles.headerTitleWrap}>
-          <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>Perfil</Text>
-        </View>
-
-        <View style={{ width: 40 }} />
-      </View>
-
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        {/* Topo idêntico à tela de perfil */}
-        <View style={styles.topArea}>
-          <Image source={AvatarImg} style={styles.avatar} />
-          <Text style={[styles.nameText, { color: theme.textPrimary }]}>Júlio César</Text>
-          <Text style={[styles.emailText, { color: theme.textSecondary }]}>julio@example.com</Text>
-        </View>
-
-        {/* Seção Alterar Perfil */}
-        <View style={styles.sectionWrap}>
-          <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>Alterar Perfil</Text>
-
-          <View style={{ marginTop: 12 }}>
-            <Text style={[styles.label, { color: theme.textPrimary }]}>Nome</Text>
-            <TextInput
-              value={name}
-              onChangeText={setName}
-              placeholder="Seu nome"
-              placeholderTextColor={theme.textSecondary}
-              style={[styles.input, { backgroundColor: theme.inputBg || '#fff', color: theme.textPrimary, borderColor: theme.inputBorder || 'transparent' }]}
-            />
-
-            <Text style={[styles.label, { color: theme.textPrimary }]}>Endereço de e-mail</Text>
-            <TextInput
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              placeholder="seu@email.com"
-              placeholderTextColor={theme.textSecondary}
-              style={[styles.input, { backgroundColor: theme.inputBg || '#fff', color: theme.textPrimary, borderColor: theme.inputBorder || 'transparent' }]}
-            />
-
-            <Text style={[styles.label, { color: theme.textPrimary }]}>Senha</Text>
-            <TextInput
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              placeholder="••••••••"
-              placeholderTextColor={theme.textSecondary}
-              style={[styles.input, { backgroundColor: theme.inputBg || '#fff', color: theme.textPrimary, borderColor: theme.inputBorder || 'transparent' }]}
-            />
-
-            <Text style={[styles.label, { color: theme.textPrimary }]}>Telefone</Text>
-            <TextInput
-              value={phone}
-              onChangeText={setPhone}
-              keyboardType="phone-pad"
-              placeholder="+55 11 9XXXX-XXXX"
-              placeholderTextColor={theme.textSecondary}
-              style={[styles.input, { backgroundColor: theme.inputBg || '#fff', color: theme.textPrimary, borderColor: theme.inputBorder || 'transparent' }]}
-            />
+    <View style={styles.container}>
+      <View style={styles.purpleTop}>
+        <SafeAreaView>
+          <View style={styles.headerRow}>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+              <Ionicons name="chevron-back" size={24} color="#fff" />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.goBack()}>
+              <Text style={styles.saveText}>Salvar</Text>
+            </TouchableOpacity>
           </View>
-        </View>
-      </ScrollView>
 
-      {/* Footer com botões idênticos ao estilo do app */}
-      <View style={[styles.footer, { borderTopColor: theme.divider || '#eee' }]}>
-        <TouchableOpacity
-          style={[styles.saveButton, { backgroundColor: theme.primary || '#401A65' }]}
-          onPress={() => {
-            // salvar: implemente API/AsyncStorage conforme necessário
-            navigation.goBack();
-          }}
-        >
-          <Text style={styles.saveText}>Salvar alterações</Text>
-        </TouchableOpacity>
+          <View style={styles.avatarWrap}>
+            <Image source={AvatarImg} style={styles.avatar} />
+            <View style={styles.cameraBtn}>
+              <Ionicons name="camera" size={16} color="#fff" />
+            </View>
+          </View>
 
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.cancelWrap}>
-          <Text style={{ color: theme.textSecondary }}>Cancelar</Text>
-        </TouchableOpacity>
+          <Text style={styles.nameTop}>Júlio César</Text>
+        </SafeAreaView>
       </View>
+
+      {/* ── Card arredondado ── */}
+      <ScrollView
+        style={styles.card}
+        contentContainerStyle={styles.cardContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <Text style={styles.sectionTitle}>Alterar Perfil</Text>
+
+        <Text style={styles.label}>Nome</Text>
+        <TextInput
+          value={name}
+          onChangeText={setName}
+          placeholder="Seu nome"
+          placeholderTextColor="#9CA3AF"
+          style={styles.input}
+        />
+
+        <Text style={styles.label}>Endereço de e-mail</Text>
+        <TextInput
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          placeholder="seu@email.com"
+          placeholderTextColor="#9CA3AF"
+          style={styles.input}
+        />
+
+        <Text style={styles.label}>Senha</Text>
+        <TextInput
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+          placeholder="••••••••"
+          placeholderTextColor="#9CA3AF"
+          style={styles.input}
+        />
+
+        <Text style={styles.label}>Telefone</Text>
+        <TextInput
+          value={phone}
+          onChangeText={setPhone}
+          keyboardType="phone-pad"
+          placeholder="+55 11 9XXXX-XXXX"
+          placeholderTextColor="#9CA3AF"
+          style={styles.input}
+        />
+
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  header: {
-    height: 64,
-    paddingHorizontal: 16,
-    paddingTop: Platform.OS === 'ios' ? 18 : 14,
-    paddingBottom: 8,
+  container: { flex: 1, backgroundColor: '#F2F2F2' },
+
+  // Header roxo
+  purpleTop: {
+    backgroundColor: '#5A189A',
+    paddingBottom: 32,
+    paddingHorizontal: 25,
+  },
+  headerRow: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    borderBottomWidth: 1
+    paddingTop: 12,
+    marginBottom: 16,
   },
-  headerButton: { padding: 8 },
-  headerTitleWrap: { flex: 1, alignItems: 'center' },
-  headerTitle: { fontSize: 18, fontWeight: '600' },
-
-  scroll: { paddingBottom: 24 },
-
-  topArea: { alignItems: 'center', marginTop: 18 },
-  avatar: { width: 96, height: 96, borderRadius: 48, resizeMode: 'cover' },
-  nameText: { marginTop: 12, fontSize: 18, fontWeight: '700' },
-  emailText: { marginTop: 4, fontSize: 13 },
-
-  sectionWrap: { paddingHorizontal: 20, marginTop: 18 },
-  sectionTitle: { fontSize: 16, fontWeight: '700' },
-  label: { marginTop: 12, marginBottom: 6, fontSize: 13, fontWeight: '600' },
-  input: {
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 8,
-    borderWidth: 1
-  },
-
-  footer: {
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    borderTopWidth: 1,
-    backgroundColor: 'transparent'
-  },
-  saveButton: {
-    height: 48,
-    borderRadius: 12,
+  backBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
     justifyContent: 'center',
-    alignItems: 'center'
   },
-  saveText: { color: '#fff', fontWeight: '700' },
-  cancelWrap: { alignItems: 'center', marginTop: 12 }
+  saveText: {
+    color: '#fff',
+    fontSize: 16,               // igual ao EditProfileText do profileStyles
+    fontWeight: '500',
+    textDecorationLine: 'underline',
+  },
+
+  // Avatar
+  avatarWrap: {
+    alignSelf: 'center',
+    marginBottom: 12,
+  },
+  avatar: {
+    width: 120,                 // igual ao ProfileImage do profileStyles
+    height: 120,
+    borderRadius: 60,
+    borderWidth: 3,
+    borderColor: 'rgba(255,255,255,0.4)',
+  },
+  cameraBtn: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: '#401A65',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
+  nameTop: {
+    textAlign: 'center',
+    color: '#fff',
+    fontSize: 30,              
+    fontWeight: '500',
+    letterSpacing: 0.2,
+    lineHeight: 40,
+    marginBottom: 4,
+  },
+
+  // Card
+  card: {
+    flex: 1,
+    backgroundColor: '#F2F2F2',
+    borderTopLeftRadius: 35,    
+    borderTopRightRadius: 35,
+    marginTop: -20,
+  },
+  cardContent: {
+    paddingHorizontal: 30,      
+    paddingTop: 35,
+    paddingBottom: 40,
+  },
+  sectionTitle: {
+    fontSize: 24,               
+    fontWeight: '700',
+    color: '#401A65',
+    marginBottom: 30,
+  },
+  label: {
+    fontSize: 22,               
+    fontWeight: '600',
+    color: '#401A65',
+    marginBottom: 8,
+    marginTop: 10,
+  },
+  input: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 16,               
+    color: '#1F1535',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
+  },
 });

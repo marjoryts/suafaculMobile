@@ -172,7 +172,6 @@ export default function MainScreen({ navigation }) {
             Olá, <WelcomeText style={{ fontWeight: 'bold', color: theme.textPrimary }}>Júlio!</WelcomeText>
           </WelcomeText>
 
-          {/* Botão rápido para Favoritos (ícone no header) */}
           <TouchableOpacity
             onPress={() => navigation.navigate('Favorites', { favorites })}
             style={{ marginLeft: 12 }}
