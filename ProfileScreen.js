@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { StatusBar, Switch } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import FotoPerfil from './assets/AvatarPhoto.png';
+import { useThemeContext } from './context/ThemeContext';
 
 import {
   PurpleBackground, TopSection, HeaderRow, BackButton, EditProfileText,
@@ -10,34 +11,16 @@ import {
 } from './profileStyles';
 
 export default function ProfileScreen({ navigation }) {
-  const [isDarkMode, setIsDarkMode] = useState(false);
-
-  const theme = {
-    bg: isDarkMode ? '#121212' : '#F4F7FA',
-    topBg: isDarkMode ? '#2A1050' : '#5A189A',
-    titleColor: isDarkMode ? '#C77DFF' : '#401A65',
-    textColor: isDarkMode ? '#F2F2F2' : '#401A65',
-    statusColor: isDarkMode ? '#A0A0A0' : '#1A1A1A3D',
-    chevronColor: isDarkMode ? '#555555' : '#1A1A1A3D',
-    iconBg: isDarkMode ? '#7C3AED' : '#5A189A',
-    backBtnBg: isDarkMode ? '#3A2060' : '#EAEAEA',
-    backBtnColor: isDarkMode ? '#C77DFF' : '#401A65',
-    switchTrackOn: isDarkMode ? '#9D4EDD' : '#5A189A',
-  };
+  const theme = useThemeContext();
+  const [notifEnabled, setNotifEnabled] = useState(true);
 
   return (
     <PurpleBackground edges={['top']} topBg={theme.topBg}>
-      <StatusBar
-        barStyle="light-content"
-        backgroundColor={theme.topBg}
-      />
+      <StatusBar barStyle="light-content" backgroundColor={theme.topBg} />
 
       <TopSection>
         <HeaderRow>
-          <BackButton
-            onPress={() => navigation?.goBack()}
-            backBtnBg={theme.backBtnBg}
-          >
+          <BackButton onPress={() => navigation?.goBack()} backBtnBg={theme.backBtnBg}>
             <Ionicons name="chevron-back" size={24} color={theme.backBtnColor} />
           </BackButton>
           <EditProfileText>Editar Perfil</EditProfileText>
@@ -55,32 +38,34 @@ export default function ProfileScreen({ navigation }) {
           <IconWrapper bgColor={theme.iconBg}>
             <Ionicons name="moon" size={24} color="white" />
           </IconWrapper>
-          <MenuText textColor={theme.textColor}>Modo Noturno</MenuText>
+          <MenuText textColor={theme.textPrimary}>Modo Noturno</MenuText>
           <Switch
             trackColor={{ false: '#D9D9D9', true: theme.switchTrackOn }}
             thumbColor="#FFFFFF"
-            onValueChange={() => setIsDarkMode(!isDarkMode)}
-            value={isDarkMode}
+            onValueChange={theme.toggleDarkMode}
+            value={theme.isDarkMode}
           />
         </MenuItem>
 
         {/* Notificações */}
-        <MenuItem>
+        <MenuItem onPress={() => setNotifEnabled(prev => !prev)}>
           <IconWrapper bgColor={theme.iconBg}>
             <Ionicons name="notifications" size={24} color="white" />
           </IconWrapper>
-          <MenuText textColor={theme.textColor}>Notificações</MenuText>
-          <MenuStatus statusColor={theme.statusColor}>Ativado</MenuStatus>
-          <Ionicons name="chevron-forward" size={20} color={theme.chevronColor} />
+          <MenuText textColor={theme.textPrimary}>Notificações</MenuText>
+          <MenuStatus statusColor={notifEnabled ? '#5A189A' : theme.textMuted}>
+            {notifEnabled ? 'Ativado' : 'Desativado'}
+          </MenuStatus>
+          <Ionicons name="chevron-forward" size={20} color={theme.textMuted} />
         </MenuItem>
 
-        {/* Favoritos */}
-        <MenuItem>
+        {/* Favoritos → Main */}
+        <MenuItem onPress={() => navigation.navigate('MainScreen')}>
           <IconWrapper bgColor={theme.iconBg}>
             <Ionicons name="heart" size={24} color="white" />
           </IconWrapper>
-          <MenuText textColor={theme.textColor}>Favoritos</MenuText>
-          <Ionicons name="chevron-forward" size={20} color={theme.chevronColor} />
+          <MenuText textColor={theme.textPrimary}>Favoritos</MenuText>
+          <Ionicons name="chevron-forward" size={20} color={theme.textMuted} />
         </MenuItem>
 
         {/* Conta */}
@@ -88,8 +73,8 @@ export default function ProfileScreen({ navigation }) {
           <IconWrapper bgColor={theme.iconBg}>
             <Ionicons name="person" size={24} color="white" />
           </IconWrapper>
-          <MenuText textColor={theme.textColor}>Conta</MenuText>
-          <Ionicons name="chevron-forward" size={20} color={theme.chevronColor} />
+          <MenuText textColor={theme.textPrimary}>Conta</MenuText>
+          <Ionicons name="chevron-forward" size={20} color={theme.textMuted} />
         </MenuItem>
 
         {/* Ajuda */}
@@ -97,8 +82,8 @@ export default function ProfileScreen({ navigation }) {
           <IconWrapper bgColor={theme.iconBg}>
             <Ionicons name="help-circle" size={28} color="white" />
           </IconWrapper>
-          <MenuText textColor={theme.textColor}>Ajuda</MenuText>
-          <Ionicons name="chevron-forward" size={20} color={theme.chevronColor} />
+          <MenuText textColor={theme.textPrimary}>Ajuda</MenuText>
+          <Ionicons name="chevron-forward" size={20} color={theme.textMuted} />
         </MenuItem>
 
         {/* Sair */}
@@ -106,8 +91,8 @@ export default function ProfileScreen({ navigation }) {
           <IconWrapper bgColor="#FF9100">
             <Ionicons name="log-out-outline" size={24} color="white" />
           </IconWrapper>
-          <MenuText textColor={theme.textColor}>Sair</MenuText>
-          <Ionicons name="chevron-forward" size={20} color={theme.chevronColor} />
+          <MenuText textColor={theme.textPrimary}>Sair</MenuText>
+          <Ionicons name="chevron-forward" size={20} color={theme.textMuted} />
         </MenuItem>
 
       </BottomSection>

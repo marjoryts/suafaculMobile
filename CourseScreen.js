@@ -2,6 +2,7 @@ import React from 'react';
 import { StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import photoEngenhariaSoftware from './assets/photoEngenhariaSoftware.png';
+import { useThemeContext } from './context/ThemeContext';
 
 import {
   SafeContainer,
@@ -19,33 +20,38 @@ import {
 } from './courseStyles';
 
 export default function CourseScreen({ navigation }) {
+  const theme = useThemeContext();
+
   return (
-    <SafeContainer>
-      <StatusBar barStyle="dark-content" backgroundColor="#F4F7FA" />
-      
+    <SafeContainer style={{ backgroundColor: theme.bg }}>
+      <StatusBar
+        barStyle={theme.isDarkMode ? 'light-content' : 'dark-content'}
+        backgroundColor={theme.bg}
+      />
+
       <HeaderRow>
-        <BackButton onPress={() => navigation?.goBack()}>
-          <Ionicons name="chevron-back" size={24} color="#401A65" />
+        <BackButton onPress={() => navigation?.goBack()} style={{ backgroundColor: theme.backBtnBg }}>
+          <Ionicons name="chevron-back" size={24} color={theme.backBtnColor} />
         </BackButton>
-        <ScreenTitle>Engenharia de Software</ScreenTitle>
+        <ScreenTitle style={{ color: theme.textPrimary }}>Engenharia de Software</ScreenTitle>
       </HeaderRow>
 
       <ContentScroll showsVerticalScrollIndicator={false}>
-        
+
         <ImageContainer>
           <CourseImage source={photoEngenhariaSoftware} resizeMode="cover" />
         </ImageContainer>
 
-        <SectionTitle>O que você vai aprender?</SectionTitle>
-        <DescriptionText>
-          Projetar, desenvolver, testar e manter sistemas de software de alta qualidade, 
+        <SectionTitle style={{ color: theme.textPrimary }}>O que você vai aprender?</SectionTitle>
+        <DescriptionText style={{ color: theme.textSecondary }}>
+          Projetar, desenvolver, testar e manter sistemas de software de alta qualidade,
           indo além da programação para focar no ciclo de vida completo do produto
         </DescriptionText>
 
-        <SectionTitle>Disciplinas</SectionTitle>
-        <DescriptionText>
-          Algoritmos, Estrutura de Dados, Programação Orientada a Objetos, 
-          Banco de Dados, Engenharia de Requisitos, Testes, Arquitetura de 
+        <SectionTitle style={{ color: theme.textPrimary }}>Disciplinas</SectionTitle>
+        <DescriptionText style={{ color: theme.textSecondary }}>
+          Algoritmos, Estrutura de Dados, Programação Orientada a Objetos,
+          Banco de Dados, Engenharia de Requisitos, Testes, Arquitetura de
           Software e Gestão de Projetos
         </DescriptionText>
 
@@ -56,7 +62,7 @@ export default function CourseScreen({ navigation }) {
           <ButtonText>Faça o Teste Vocacional!</ButtonText>
         </PrimaryButton>
       </ButtonWrapper>
-      
+
     </SafeContainer>
   );
 }
