@@ -91,8 +91,8 @@ export default function VestibularScreen({ route, navigation }) {
       </ContentScroll>
 
       <ButtonWrapper>
-        <PrimaryButton onPress={() => navigation.navigate('MainScreen')}>
-          <ButtonText>Voltar</ButtonText>
+        <PrimaryButton onPress={() => navigation.navigate('Vestibulares')}>
+          <ButtonText>Ver Datas</ButtonText>
         </PrimaryButton>
       </ButtonWrapper>
     </SafeContainer>
