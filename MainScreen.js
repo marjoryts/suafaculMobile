@@ -1,5 +1,5 @@
-import React from 'react';
-import { FlatList, Image, View, TouchableOpacity } from 'react-native';
+import React, { useState, useMemo } from 'react';
+import { FlatList, Image, View, TouchableOpacity, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import FotoPerfil from './assets/AvatarPhoto.png';
 import { useThemeContext } from './context/ThemeContext';
@@ -29,22 +29,23 @@ import {
   CardTitle, TabBar, TabItem, TabText
 } from './styles';
 
+/* Dados */
 const PUBLICAS = [
-  { id: '1', nome: "USP",     imagem: photoUsp },
-  { id: '2', nome: "Fatec",   imagem: photoFatec },
-  { id: '3', nome: "Unicamp", imagem: photoUnicamp },
-  { id: '4', nome: "Unesp",   imagem: photoUnesp },
+  { id: '1', nome: "USP",     imagem: photoUsp, tipo: 'faculdade' },
+  { id: '2', nome: "Fatec",   imagem: photoFatec, tipo: 'faculdade' },
+  { id: '3', nome: "Unicamp", imagem: photoUnicamp, tipo: 'faculdade' },
+  { id: '4', nome: "Unesp",   imagem: photoUnesp, tipo: 'faculdade' },
 ];
 
 const PRIVADAS = [
-  { id: '5', nome: "Piaget",    imagem: photoPiaget },
-  { id: '6', nome: "Mackenzie", imagem: photoMackenzie },
-  { id: '7', nome: "PUC",       imagem: photoPUC },
-  { id: '8', nome: "FGV",       imagem: photoFGV },
+  { id: '5', nome: "Piaget",    imagem: photoPiaget, tipo: 'faculdade' },
+  { id: '6', nome: "Mackenzie", imagem: photoMackenzie, tipo: 'faculdade' },
+  { id: '7', nome: "PUC",       imagem: photoPUC, tipo: 'faculdade' },
+  { id: '8', nome: "FGV",       imagem: photoFGV, tipo: 'faculdade' },
 ];
 
 const CURSOS = [
-  { id: '9',  nome: "Engenharia\nde Software", imagem: photoEngenhariaSoftware, tipo: 'curso' },
+  { id: '9',  nome: "Engenharia de\nSoftware", imagem: photoEngenhariaSoftware, tipo: 'curso' },
   { id: '10', nome: "Medicina",                imagem: photoMedicina, tipo: 'curso' },
   { id: '11', nome: "Direito",                 imagem: photoDireito, tipo: 'curso' },
   { id: '12', nome: "Administração",           imagem: photoAdministracao, tipo: 'curso' },
@@ -57,13 +58,49 @@ const VESTIBULARES = [
   { id: '16', nome: 'Vestibular Unesp', imagem: photoVestibularUnesp, tipo: 'vestibular' },
 ];
 
+/* util */
+function normalizeText(text = '') {
+  return text
+    .toString()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
+
 export default function MainScreen({ navigation }) {
   const theme = useThemeContext();
+  const [query, setQuery] = useState('');
+  const [favorites, setFavorites] = useState([]); // array de items favoritados (objetos)
 
+  const matchesQuery = (item, q) => {
+    if (!q) return true;
+    const normalizedQ = normalizeText(q);
+    const fieldsToSearch = [item.nome];
+    return fieldsToSearch.some(f => normalizeText(f).includes(normalizedQ));
+  };
+
+  const filteredPublicas = useMemo(() => PUBLICAS.filter(item => matchesQuery(item, query)), [query]);
+  const filteredPrivadas = useMemo(() => PRIVADAS.filter(item => matchesQuery(item, query)), [query]);
+  const filteredCursos = useMemo(() => CURSOS.filter(item => matchesQuery(item, query)), [query]);
+  const filteredVestibulares = useMemo(() => VESTIBULARES.filter(item => matchesQuery(item, query)), [query]);
+
+  const anyResults = filteredPublicas.length + filteredPrivadas.length + filteredCursos.length + filteredVestibulares.length > 0;
+
+  /* Favoritar / desfavoritar */
+  const isFavorited = (item) => favorites.some(f => f.id === item.id);
+  const toggleFavorite = (item) => {
+    setFavorites(prev => {
+      const exists = prev.some(f => f.id === item.id);
+      if (exists) return prev.filter(f => f.id !== item.id);
+      return [...prev, item];
+    });
+  };
+
+  /* Render card genérico (usado em faculdades e cursos) */
   const renderCurso = ({ item }) => (
     <CardContainer
       onPress={() => {
-        // Cursos e Faculdades usam a mesma tela (CourseScreen) mas com tipo diferente
         if (item.tipo === 'curso') {
           navigation && navigation.navigate('CourseScreen', { item, type: 'curso' });
         } else {
@@ -74,13 +111,49 @@ export default function MainScreen({ navigation }) {
     >
       <BackgroundImage source={item.imagem} resizeMode="cover" imageStyle={{ borderRadius: 20 }} opacity={0.9}>
         {item.nome ? <CardTitle>{item.nome}</CardTitle> : null}
-        <Ionicons
-          name="heart-outline"
-          size={24}
-          color="#401A65"
+
+        {/* Heart icon: toggle favorite */}
+        <TouchableOpacity
+          onPress={(e) => {
+            e.stopPropagation && e.stopPropagation(); // evita disparar o onPress do card
+            toggleFavorite(item);
+          }}
           style={{ position: 'absolute', bottom: 10, right: 10 }}
-        />
+        >
+          <Ionicons
+            name={isFavorited(item) ? 'heart' : 'heart-outline'}
+            size={24}
+            color={isFavorited(item) ? '#FF4D6D' : '#401A65'}
+          />
+        </TouchableOpacity>
       </BackgroundImage>
+    </CardContainer>
+  );
+
+  /* Render vestibular (mantém heart toggle) */
+  const renderVestibularItem = ({ item }) => (
+    <CardContainer
+      onPress={() => navigation.navigate('VestibularScreen', { item })}
+      style={{ backgroundColor: theme.cardBg, padding: 0, borderRadius: 20, overflow: 'hidden' }}
+    >
+      <Image
+        source={item.imagem}
+        resizeMode="cover"
+        style={{
+          width: '100%',
+          height: '100%',
+          borderRadius: 20,
+        }}
+      />
+      <TouchableOpacity
+        onPress={(e) => {
+          e.stopPropagation && e.stopPropagation();
+          toggleFavorite(item);
+        }}
+        style={{ position: 'absolute', bottom: 10, right: 10 }}
+      >
+        <Ionicons name={isFavorited(item) ? 'heart' : 'heart-outline'} size={24} color={isFavorited(item) ? '#FF4D6D' : '#401A65'} />
+      </TouchableOpacity>
     </CardContainer>
   );
 
@@ -98,17 +171,38 @@ export default function MainScreen({ navigation }) {
           <WelcomeText style={{ color: theme.textPrimary }}>
             Olá, <WelcomeText style={{ fontWeight: 'bold', color: theme.textPrimary }}>Júlio!</WelcomeText>
           </WelcomeText>
+
+          {/* Botão rápido para Favoritos (ícone no header) */}
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Favorites', { favorites })}
+            style={{ marginLeft: 12 }}
+          >
+            <Ionicons name="heart" size={22} color="#FF4D6D" />
+          </TouchableOpacity>
         </Header>
 
+        {/* SearchBar funcional */}
         <SearchBar style={{ backgroundColor: theme.searchBg, borderColor: theme.searchBorder }}>
           <Input
+            value={query}
+            onChangeText={setQuery}
             placeholder="Pesquise faculdades, cursos...."
             placeholderTextColor={theme.textSecondary}
             style={{ color: theme.inputColor }}
+            autoCapitalize="none"
+            autoCorrect={false}
+            returnKeyType="search"
           />
-          <Ionicons name="search" size={20} color="orange" />
+          {query ? (
+            <TouchableOpacity onPress={() => setQuery('')}>
+              <Ionicons name="close-circle" size={20} color={theme.textSecondary} />
+            </TouchableOpacity>
+          ) : (
+            <Ionicons name="search" size={20} color="orange" />
+          )}
         </SearchBar>
 
+        {/* Sugestões rápidas */}
         <FlatList
           data={['USP', 'UNICAMP', 'UNIPIAGET']}
           horizontal
@@ -128,62 +222,70 @@ export default function MainScreen({ navigation }) {
           )}
         />
 
-        <SectionTitle style={{ color: theme.textPrimary }}>Faculdades Públicas</SectionTitle>
-        <FlatList
-          data={PUBLICAS} renderItem={renderCurso} keyExtractor={item => item.id}
-          horizontal showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingLeft: 20, marginBottom: 25 }}
-        />
+        {/* Seções filtradas */}
+        {filteredPublicas.length > 0 && (
+          <>
+            <SectionTitle style={{ color: theme.textPrimary }}>Faculdades Públicas</SectionTitle>
+            <FlatList
+              data={filteredPublicas} renderItem={renderCurso} keyExtractor={item => item.id}
+              horizontal showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingLeft: 20, marginBottom: 25 }}
+            />
+          </>
+        )}
 
-        <SectionTitle style={{ color: theme.textPrimary }}>Faculdades Privadas</SectionTitle>
-        <FlatList
-          data={PRIVADAS} renderItem={renderCurso} keyExtractor={item => item.id}
-          horizontal showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingLeft: 20, marginBottom: 25 }}
-        />
+        {filteredPrivadas.length > 0 && (
+          <>
+            <SectionTitle style={{ color: theme.textPrimary }}>Faculdades Privadas</SectionTitle>
+            <FlatList
+              data={filteredPrivadas} renderItem={renderCurso} keyExtractor={item => item.id}
+              horizontal showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingLeft: 20, marginBottom: 25 }}
+            />
+          </>
+        )}
 
-        <SectionTitle style={{ color: theme.textPrimary }}>Cursos</SectionTitle>
-        <FlatList
-          data={CURSOS} renderItem={renderCurso} keyExtractor={item => item.id}
-          horizontal showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingLeft: 20, marginBottom: 25 }}
-        />
+        {filteredCursos.length > 0 && (
+          <>
+            <SectionTitle style={{ color: theme.textPrimary }}>Cursos</SectionTitle>
+            <FlatList
+              data={filteredCursos} renderItem={renderCurso} keyExtractor={item => item.id}
+              horizontal showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingLeft: 20, marginBottom: 25 }}
+            />
+          </>
+        )}
 
-        <SectionTitle style={{ color: theme.textPrimary }}>Vestibulares</SectionTitle>
-        <FlatList
-          data={VESTIBULARES} keyExtractor={item => item.id} horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingLeft: 20, marginBottom: 25 }}
-          renderItem={({ item }) => {
-            const isFuvest = item.nome === 'FUVEST';
-            return (
-              <CardContainer
-                onPress={() => navigation.navigate('VestibularScreen', { item })}
-                style={{ backgroundColor: theme.cardBg, padding: 0, borderRadius: 20, overflow: 'hidden' }}
-              >
-                {/* Ajuste: resizeMode cover para a maioria; reduzir zoom para FUVEST */}
-                <Image
-                  source={item.imagem}
-                  resizeMode="cover"
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    borderRadius: 20,
-                    transform: isFuvest ? [{ scale: 0.88 }] : [{ scale: 1 }],
-                    alignSelf: 'center'
-                  }}
-                />
-                <Ionicons name="heart-outline" size={24} color="#401A65" style={{ position: 'absolute', bottom: 10, right: 10 }} />
-              </CardContainer>
-            );
-          }}
-        />
+        {filteredVestibulares.length > 0 && (
+          <>
+            <SectionTitle style={{ color: theme.textPrimary }}>Vestibulares</SectionTitle>
+            <FlatList
+              data={filteredVestibulares} keyExtractor={item => item.id} horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingLeft: 20, marginBottom: 25 }}
+              renderItem={renderVestibularItem}
+            />
+          </>
+        )}
+
+        {!anyResults && (
+          <View style={{ paddingHorizontal: 20, paddingTop: 30 }}>
+            <Text style={{ color: theme.textSecondary, fontSize: 16 }}>
+              Nenhum resultado encontrado para "<Text style={{ color: theme.textPrimary }}>{query}</Text>".
+            </Text>
+            <Text style={{ color: theme.textSecondary, marginTop: 8 }}>
+              Tente outra palavra-chave ou verifique a ortografia.
+            </Text>
+          </View>
+        )}
 
       </ScrollWrapper>
 
       <TabBar>
         <TabItem><Ionicons name="search" size={24} color="white" /><TabText>Explorar</TabText></TabItem>
-        <TabItem><Ionicons name="bookmark-outline" size={24} color="white" /><TabText>Salvos</TabText></TabItem>
+        <TabItem onPress={() => navigation.navigate('Favorites', { favorites })}>
+          <Ionicons name="bookmark-outline" size={24} color="white" /><TabText>Salvos</TabText>
+        </TabItem>
         <TabItem onPress={() => navigation.navigate('ProfileScreen')}>
           <Ionicons name="person-outline" size={24} color="white" />
           <TabText>Perfil</TabText>

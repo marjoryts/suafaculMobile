@@ -14,6 +14,8 @@ import VocationalTestScreen from '../screens/VocationalTestScreen';
 import VocationalResultScreen from '../screens/VocationalResultScreen';
 import VestibularesScreen from '../screens/VestibularesScreen';
 import VocationalIntroScreen from '../screens/VocationalIntroScreen';
+import FavoritesScreen from '../FavoritesScreen';
+import EditProfileScreen from '../EditProfileScreen';
 
 import VestibularScreen from '../VestibularScreen'; // <-- import adicionado
 
@@ -39,6 +41,8 @@ export default function AuthNavigator() {
         <Stack.Screen name="VocationalResult" component={VocationalResultScreen} />
         <Stack.Screen name="Vestibulares" component={VestibularesScreen} />
         <Stack.Screen name="VocationalIntro" component={VocationalIntroScreen} />
+        <Stack.Screen name="Favorites" component={FavoritesScreen} />
+        <Stack.Screen name="EditProfile" component={EditProfileScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

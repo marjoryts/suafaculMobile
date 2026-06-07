@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StatusBar, Switch } from 'react-native';
+import { StatusBar, Switch, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import FotoPerfil from './assets/AvatarPhoto.png';
 import { useThemeContext } from './context/ThemeContext';
@@ -23,7 +23,9 @@ export default function ProfileScreen({ navigation }) {
           <BackButton onPress={() => navigation?.goBack()} backBtnBg={theme.backBtnBg}>
             <Ionicons name="chevron-back" size={24} color={theme.backBtnColor} />
           </BackButton>
-          <EditProfileText>Editar Perfil</EditProfileText>
+          <TouchableOpacity onPress={() => navigation.navigate('EditProfile')}>
+  <EditProfileText>Editar Perfil</EditProfileText>
+</TouchableOpacity>
         </HeaderRow>
 
         <ProfileImage source={FotoPerfil} resizeMode="cover" />
