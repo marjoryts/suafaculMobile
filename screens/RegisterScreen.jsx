@@ -10,22 +10,42 @@ import {
   KeyboardAvoidingView,
   Platform,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { colors, fonts, radius, spacing } from '../theme';
 import { Input, PrimaryButton, TextLink, BackButton, Divider } from '../components/UI';
+import { useAuth } from '../context/AuthContext';
+import { errorMessage } from '../src/api/client';
 
 export default function RegisterScreen({ navigation }) {
+  const { register } = useAuth();
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleRegister = async () => {
+    if (username.trim().length < 3) {
+      Alert.alert('Nome de usuário inválido', 'Use ao menos 3 caracteres.');
+      return;
+    }
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim())) {
+      Alert.alert('E-mail inválido', 'Informe um e-mail válido.');
+      return;
+    }
+    if (password.length < 6) {
+      Alert.alert('Senha muito curta', 'A senha precisa ter ao menos 6 caracteres.');
+      return;
+    }
     setLoading(true);
-    setTimeout(() => {
+    try {
+      await register({ nome_usuario: username.trim(), email: email.trim(), senha: password });
+      navigation.reset({ index: 0, routes: [{ name: 'MainScreen' }] });
+    } catch (e) {
+      Alert.alert('Não foi possível cadastrar', errorMessage(e));
+    } finally {
       setLoading(false);
-      navigation?.navigate('VerifyEmail');
-    }, 1500);
+    }
   };
 
   return (

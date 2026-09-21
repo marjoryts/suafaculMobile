@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -12,12 +12,17 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import FotoPerfil from '../assets/AvatarPhoto.png';
 import { useThemeContext } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
+import { vocationalApi } from '../src/api/services';
+import { paraItem } from '../src/mappers';
+import { LoadingView, ErrorView } from '../components/StateViews';
 
-const CATEGORIES = [
-  { rank: 1, label: 'Ciência e Tecnologia', score: 8, max: 10, bg: '#F0DCF7', bar: '#BF93EA', circle: '#E8C8F5' },
-  { rank: 2, label: 'Raciocínio Lógico',    score: 6, max: 10, bg: '#BDEEF4', bar: '#7FC4EB', circle: '#A8DFF0' },
-  { rank: 3, label: 'Biologia',              score: 4, max: 10, bg: '#D7E689', bar: '#7BC142', circle: '#C5D96E' },
-  { rank: 4, label: 'Humanas',               score: 2, max: 10, bg: '#F5C0D2', bar: '#C24B74', circle: '#EFA0BB' },
+// Paleta dos cartões (a cor segue a posição no ranking).
+const PALETA = [
+  { bg: '#F0DCF7', bar: '#BF93EA', circle: '#E8C8F5' },
+  { bg: '#BDEEF4', bar: '#7FC4EB', circle: '#A8DFF0' },
+  { bg: '#D7E689', bar: '#7BC142', circle: '#C5D96E' },
+  { bg: '#F5C0D2', bar: '#C24B74', circle: '#EFA0BB' },
 ];
 
 function ResultCard({ item, index }) {
@@ -62,6 +67,34 @@ function ResultCard({ item, index }) {
 export default function VocationalResultScreen({ navigation, route }) {
   const theme = useThemeContext();
   const bannerAnim = useRef(new Animated.Value(0)).current;
+  const { user } = useAuth();
+  const [resultado, setResultado] = useState(route?.params?.resultado || null);
+  const [loading, setLoading] = useState(!route?.params?.resultado);
+  const [error, setError] = useState(null);
+
+  // Sem resultado vindo do teste: busca o último resultado salvo no servidor.
+  const carregar = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      setResultado(await vocationalApi.ultimo());
+    } catch (e) {
+      setError(e);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { if (!route?.params?.resultado) carregar(); }, [carregar]);
+
+  const categorias = (resultado?.ranking || []).map((r, i) => ({
+    rank: r.posicao,
+    label: r.nome.replace(/^Perfil\s+/, ''),
+    score: r.nota,
+    max: r.maximo,
+    ...PALETA[i % PALETA.length],
+  }));
+  const cursos = (resultado?.cursos_recomendados || []).map(paraItem);
 
   useEffect(() => {
     Animated.spring(bannerAnim, {
@@ -91,7 +124,7 @@ export default function VocationalResultScreen({ navigation, route }) {
         <View style={styles.header}>
           <Image source={FotoPerfil} style={styles.avatar} />
           <View>
-            <Text style={[styles.helloName, { color: theme.textPrimary }]}>Olá Júlio,</Text>
+            <Text style={[styles.helloName, { color: theme.textPrimary }]}>Olá {user?.nome_usuario || ''},</Text>
             <Text style={[styles.helloSub, { color: theme.textSecondary }]}>Que bom te ver de novo!</Text>
           </View>
         </View>
@@ -113,11 +146,30 @@ export default function VocationalResultScreen({ navigation, route }) {
 
         <Text style={[styles.sectionTitle, { color: theme.titleColor }]}>Resultados recentes</Text>
 
+        {loading ? <LoadingView message="Carregando resultado..." /> : null}
+        {!loading && error ? <ErrorView error={error} onRetry={carregar} /> : null}
+
         <View style={styles.cards}>
-          {CATEGORIES.map((item, i) => (
+          {categorias.map((item, i) => (
             <ResultCard key={item.rank} item={item} index={i} />
           ))}
         </View>
+
+        {cursos.length > 0 ? (
+          <>
+            <Text style={[styles.sectionTitle, { color: theme.titleColor }]}>Cursos recomendados</Text>
+            {cursos.map((c) => (
+              <TouchableOpacity
+                key={c.id}
+                onPress={() => navigation?.navigate('CourseScreen', { item: c, type: 'curso' })}
+                style={{ paddingVertical: 10 }}
+              >
+                <Text style={{ color: theme.textPrimary, fontSize: 16, fontWeight: '600' }}>{c.nome}</Text>
+                <Text style={{ color: theme.textSecondary, fontSize: 12 }}>{c.area}</Text>
+              </TouchableOpacity>
+            ))}
+          </>
+        ) : null}
 
       </ScrollView>
 

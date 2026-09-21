@@ -1,8 +1,11 @@
 // VestibularScreen.js
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeContext } from './context/ThemeContext';
+import { catalogApi } from './src/api/services';
+import { formatarData, textoDias } from './src/mappers';
+import { LoadingView, ErrorView } from './components/StateViews';
 
 import {
   SafeContainer,
@@ -22,41 +25,37 @@ import {
 export default function VestibularScreen({ route, navigation }) {
   const theme = useThemeContext();
   const { item } = route.params || {};
+  const [v, setV] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const vestibularInfo = {
-    'ENEM': {
-      titulo: 'ENEM',
-      descricao: 'Exame Nacional do Ensino Médio que avalia competências e habilidades para acesso ao ensino superior e programas como Sisu e ProUni.',
-      comoEstudar: 'Revisar conteúdos do ensino médio, praticar provas anteriores, treinar redação e fazer simulados cronometrados.',
-      datas: 'Aplicado anualmente; normalmente em novembro. Ver edital oficial para datas exatas.'
-    },
-    'FUVEST': {
-      titulo: 'FUVEST',
-      descricao: 'Vestibular da USP, com provas objetivas e discursivas, conhecido pela alta concorrência e foco em interpretação e conteúdo.',
-      comoEstudar: 'Foco em leitura crítica, resolução de questões e revisão aprofundada das disciplinas do ensino médio.',
-      datas: 'Etapas geralmente entre dezembro e janeiro; consulte o calendário oficial da FUVEST.'
-    },
-    'Vestibular Unicamp': {
-      titulo: 'Vestibular Unicamp',
-      descricao: 'Processo seletivo da Unicamp com provas específicas e avaliação por áreas do conhecimento.',
-      comoEstudar: 'Resolver provas anteriores da Unicamp, reforçar raciocínio lógico e conteúdos específicos por área.',
-      datas: 'Datas variam por ano; consulte o site da Unicamp para o cronograma.'
-    },
-    'Vestibular Unesp': {
-      titulo: 'Vestibular Unesp',
-      descricao: 'Seleção da UNESP com provas objetivas e discursivas, cobrando conteúdo do ensino médio.',
-      comoEstudar: 'Prática de questões, revisão de conteúdos e simulados; atenção às disciplinas exigidas pelo curso.',
-      datas: 'Ver edital anual da UNESP para prazos e datas.'
-    },
-    default: {
-      titulo: item?.nome || 'Vestibular',
-      descricao: 'Informações gerais sobre o vestibular.',
-      comoEstudar: 'Estude com provas anteriores, cronograma de revisão e prática de redação.',
-      datas: 'Consulte o edital oficial.'
+  const carregar = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      setV(await catalogApi.vestibular(item.id));
+    } catch (e) {
+      setError(e);
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [item?.id]);
 
-  const info = vestibularInfo[item?.nome] || vestibularInfo.default;
+  useEffect(() => { carregar(); }, [carregar]);
+
+  // Datas: calculadas pelo servidor (dias restantes / status), não mais texto fixo.
+  const partesDatas = [];
+  if (v?.data_prova) partesDatas.push(`Prova: ${formatarData(v.data_prova)} (${textoDias(v)}).`);
+  else partesDatas.push('Data da prova ainda a definir.');
+  if (v?.periodo_inscricao) partesDatas.push(`Inscrições: ${v.periodo_inscricao}.`);
+  if (v?.link_edital) partesDatas.push(`Edital: ${v.link_edital}`);
+
+  const info = {
+    titulo: v?.nome || item?.nome || 'Vestibular',
+    descricao: v?.descricao || 'Informações gerais sobre o vestibular.',
+    comoEstudar: v?.como_estudar || 'Estude com provas anteriores, cronograma de revisão e prática de redação.',
+    datas: partesDatas.join('\n'),
+  };
 
   return (
     <SafeContainer style={{ backgroundColor: theme.bg }}>
@@ -70,9 +69,16 @@ export default function VestibularScreen({ route, navigation }) {
       </HeaderRow>
 
       <ContentScroll showsVerticalScrollIndicator={false}>
-        <ImageContainer>
-          <CourseImage source={item.imagem} resizeMode="cover" />
-        </ImageContainer>
+        {item?.imagem ? (
+          <ImageContainer>
+            <CourseImage source={item.imagem} resizeMode="cover" />
+          </ImageContainer>
+        ) : null}
+
+        {loading ? <LoadingView message="Carregando detalhes..." /> : null}
+        {!loading && error ? <ErrorView error={error} onRetry={carregar} /> : null}
+        {!loading && !error ? (
+          <>
 
         <SectionTitle style={{ color: theme.textPrimary }}>Descrição do vestibular</SectionTitle>
         <DescriptionText style={{ color: theme.textSecondary }}>
@@ -88,6 +94,8 @@ export default function VestibularScreen({ route, navigation }) {
         <DescriptionText style={{ color: theme.textSecondary }}>
           {info.datas}
         </DescriptionText>
+          </>
+        ) : null}
       </ContentScroll>
 
       <ButtonWrapper>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,9 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import BellImage from '../assets/sign.webp';
 import { useThemeContext } from '../context/ThemeContext';
+import { catalogApi } from '../src/api/services';
+import { textoDias } from '../src/mappers';
+import { LoadingView, ErrorView } from '../components/StateViews';
 
 const TODAY = new Date();
 const WEEK_DAYS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab', 'Dom'];
@@ -27,13 +30,6 @@ function getWeekDays() {
   return days;
 }
 
-const VESTIBULARES = [
-  { id: '1', nome: 'Fatec',   dias: 68  },
-  { id: '2', nome: 'Unicamp', dias: 98  },
-  { id: '3', nome: 'Fuvest',  dias: 125 },
-  { id: '4', nome: 'Enem',    dias: 190 },
-];
-
 const PT_MONTHS = [
   'Janeiro','Fevereiro','Março','Abril','Maio','Junho',
   'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'
@@ -44,7 +40,25 @@ export default function VestibularesScreen({ navigation }) {
   const theme = useThemeContext();
   const weekDays = getWeekDays();
   const [selectedDay, setSelectedDay] = useState(TODAY.getDate());
-  const [vestibulares, setVestibulares] = useState(VESTIBULARES);
+  const [vestibulares, setVestibulares] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Próximos vestibulares vêm da API; a contagem de dias é calculada no servidor.
+  const carregar = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const lista = await catalogApi.vestibulares({ proximos: 1 });
+      setVestibulares(lista.map((v) => ({ ...v, id: String(v.id) })));
+    } catch (e) {
+      setError(e);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { carregar(); }, [carregar]);
   const [notifEnabled, setNotifEnabled] = useState(false);
 
   const removeItem = (id) => {
@@ -125,6 +139,12 @@ export default function VestibularesScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
+        {loading ? <LoadingView message="Carregando vestibulares..." /> : null}
+        {!loading && error ? <ErrorView error={error} onRetry={carregar} /> : null}
+        {!loading && !error && vestibulares.length === 0 ? (
+          <Text style={{ color: theme.textSecondary, textAlign: 'center' }}>Nenhum vestibular com data futura cadastrado.</Text>
+        ) : null}
+
         <View style={styles.list}>
           {vestibulares.map((item) => (
             <View key={item.id} style={[styles.listItem, { backgroundColor: theme.cardBg }]}>
@@ -140,7 +160,7 @@ export default function VestibularesScreen({ navigation }) {
 
               <View style={styles.listDaysBox}>
                 <Ionicons name="time-outline" size={14} color={theme.textSecondary} />
-                <Text style={[styles.listDaysText, { color: theme.textSecondary }]}>{item.dias} dias</Text>
+                <Text style={[styles.listDaysText, { color: theme.textSecondary }]}>{textoDias(item)}</Text>
               </View>
             </View>
           ))}

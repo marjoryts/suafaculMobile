@@ -1,27 +1,14 @@
-import React, { useState, useMemo } from 'react';
-import { FlatList, Image, View, TouchableOpacity, Text } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { FlatList, Image, View, TouchableOpacity, Text, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import FotoPerfil from './assets/AvatarPhoto.png';
 import { useThemeContext } from './context/ThemeContext';
-
-import photoUsp from './assets/photoUsp.png';
-import photoFatec from './assets/photoFatec.png';
-import photoPiaget from './assets/photoPiaget.png';
-import photoMackenzie from './assets/photoMackenzie.png';
-import photoUnicamp from './assets/photoUnicamp.png.webp';
-import photoUnesp from './assets/photoUnesp.png.jpg';
-import photoPUC from './assets/photoPUC.png.jpg';
-import photoFGV from './assets/photoFGV.png.png';
-
-import photoEngenhariaSoftware from './assets/photoEngenhariaSoftware.png';
-import photoMedicina from './assets/photoMedicina.png';
-import photoDireito from './assets/photoDireito.png.jpg';
-import photoAdministracao from './assets/photoAdministracao.png.jpg';
-
-import photoEnem from './assets/photoEnem.png';
-import photoFuvest from './assets/photoFuvest.png';
-import photoVestibularUnicamp from './assets/photoVestibularUnicamp.png.jpg';
-import photoVestibularUnesp from './assets/photoVestibularUnesp.jpg';
+import { useAuth } from './context/AuthContext';
+import { useFavorites } from './context/FavoritesContext';
+import { catalogApi } from './src/api/services';
+import { errorMessage } from './src/api/client';
+import { paraItem } from './src/mappers';
+import { LoadingView, ErrorView } from './components/StateViews';
 
 import {
   SafeContainer, ScrollWrapper, Header, Avatar, WelcomeText,
@@ -29,72 +16,71 @@ import {
   CardTitle, TabBar, TabItem, TabText
 } from './styles';
 
-/* Dados */
-const PUBLICAS = [
-  { id: '1', nome: "USP",     imagem: photoUsp, tipo: 'faculdade' },
-  { id: '2', nome: "Fatec",   imagem: photoFatec, tipo: 'faculdade' },
-  { id: '3', nome: "Unicamp", imagem: photoUnicamp, tipo: 'faculdade' },
-  { id: '4', nome: "Unesp",   imagem: photoUnesp, tipo: 'faculdade' },
-];
+// Os dados (faculdades, cursos, vestibulares) vêm da API Flask (/api/v1/home e /api/v1/busca).
+const VAZIO = { publicas: [], privadas: [], cursos: [], vestibulares: [] };
 
-const PRIVADAS = [
-  { id: '5', nome: "Piaget",    imagem: photoPiaget, tipo: 'faculdade' },
-  { id: '6', nome: "Mackenzie", imagem: photoMackenzie, tipo: 'faculdade' },
-  { id: '7', nome: "PUC",       imagem: photoPUC, tipo: 'faculdade' },
-  { id: '8', nome: "FGV",       imagem: photoFGV, tipo: 'faculdade' },
-];
+function organizarHome(d) {
+  return {
+    publicas: (d.faculdades_publicas || []).map(paraItem),
+    privadas: (d.faculdades_privadas || []).map(paraItem),
+    cursos: (d.cursos || []).map(paraItem),
+    vestibulares: (d.vestibulares || []).map(paraItem),
+  };
+}
 
-const CURSOS = [
-  { id: '9',  nome: "Engenharia de\nSoftware", imagem: photoEngenhariaSoftware, tipo: 'curso' },
-  { id: '10', nome: "Medicina",                imagem: photoMedicina, tipo: 'curso' },
-  { id: '11', nome: "Direito",                 imagem: photoDireito, tipo: 'curso' },
-  { id: '12', nome: "Administração",           imagem: photoAdministracao, tipo: 'curso' },
-];
-
-const VESTIBULARES = [
-  { id: '13', nome: 'ENEM', imagem: photoEnem, tipo: 'vestibular' },
-  { id: '14', nome: 'FUVEST', imagem: photoFuvest, tipo: 'vestibular' },
-  { id: '15', nome: 'Vestibular Unicamp', imagem: photoVestibularUnicamp, tipo: 'vestibular' },
-  { id: '16', nome: 'Vestibular Unesp', imagem: photoVestibularUnesp, tipo: 'vestibular' },
-];
-
-/* util */
-function normalizeText(text = '') {
-  return text
-    .toString()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .trim();
+function organizarBusca(d) {
+  const fac = d.faculdades || [];
+  return {
+    publicas: fac.filter((f) => f.tipo_instituicao === 'Pública').map(paraItem),
+    privadas: fac.filter((f) => f.tipo_instituicao !== 'Pública').map(paraItem),
+    cursos: (d.cursos || []).map(paraItem),
+    vestibulares: (d.vestibulares || []).map(paraItem),
+  };
 }
 
 export default function MainScreen({ navigation }) {
   const theme = useThemeContext();
+  const { user } = useAuth();
+  const { isFavorited, toggle } = useFavorites();
   const [query, setQuery] = useState('');
-  const [favorites, setFavorites] = useState([]); // array de items favoritados (objetos)
+  const [data, setData] = useState(VAZIO);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
-  const matchesQuery = (item, q) => {
-    if (!q) return true;
-    const normalizedQ = normalizeText(q);
-    const fieldsToSearch = [item.nome];
-    return fieldsToSearch.some(f => normalizeText(f).includes(normalizedQ));
-  };
+  // Carrega a home; com texto na busca, consulta /busca (com debounce de 300 ms).
+  useEffect(() => {
+    let cancelado = false;
+    const q = query.trim();
+    const t = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const r = q.length >= 2 ? organizarBusca(await catalogApi.busca(q)) : organizarHome(await catalogApi.home());
+        if (cancelado) return;
+        setData(r);
+        setError(null);
+      } catch (e) {
+        if (!cancelado) setError(e);
+      } finally {
+        if (!cancelado) setLoading(false);
+      }
+    }, q ? 300 : 0);
+    return () => { cancelado = true; clearTimeout(t); };
+  }, [query, reloadKey]);
 
-  const filteredPublicas = useMemo(() => PUBLICAS.filter(item => matchesQuery(item, query)), [query]);
-  const filteredPrivadas = useMemo(() => PRIVADAS.filter(item => matchesQuery(item, query)), [query]);
-  const filteredCursos = useMemo(() => CURSOS.filter(item => matchesQuery(item, query)), [query]);
-  const filteredVestibulares = useMemo(() => VESTIBULARES.filter(item => matchesQuery(item, query)), [query]);
-
+  const filteredPublicas = data.publicas;
+  const filteredPrivadas = data.privadas;
+  const filteredCursos = data.cursos;
+  const filteredVestibulares = data.vestibulares;
   const anyResults = filteredPublicas.length + filteredPrivadas.length + filteredCursos.length + filteredVestibulares.length > 0;
 
-  /* Favoritar / desfavoritar */
-  const isFavorited = (item) => favorites.some(f => f.id === item.id);
-  const toggleFavorite = (item) => {
-    setFavorites(prev => {
-      const exists = prev.some(f => f.id === item.id);
-      if (exists) return prev.filter(f => f.id !== item.id);
-      return [...prev, item];
-    });
+  /* Favoritar / desfavoritar (salvo no servidor) */
+  const toggleFavorite = async (item) => {
+    try {
+      await toggle(item);
+    } catch (e) {
+      Alert.alert('Não foi possível atualizar seus favoritos', errorMessage(e));
+    }
   };
 
   /* Render card genérico (usado em faculdades e cursos) */
@@ -109,7 +95,7 @@ export default function MainScreen({ navigation }) {
       }}
       style={{ backgroundColor: theme.cardBg, padding: 0, borderRadius: 20, overflow: 'hidden' }}
     >
-      <BackgroundImage source={item.imagem} resizeMode="cover" imageStyle={{ borderRadius: 20 }} opacity={0.9}>
+      <BackgroundImage source={item.imagem || undefined} resizeMode="cover" imageStyle={{ borderRadius: 20 }} opacity={0.9} style={item.imagem ? undefined : { backgroundColor: '#401A65' }}>
         {item.nome ? <CardTitle>{item.nome}</CardTitle> : null}
 
         {/* Heart icon: toggle favorite */}
@@ -136,15 +122,21 @@ export default function MainScreen({ navigation }) {
       onPress={() => navigation.navigate('VestibularScreen', { item })}
       style={{ backgroundColor: theme.cardBg, padding: 0, borderRadius: 20, overflow: 'hidden' }}
     >
-      <Image
-        source={item.imagem}
-        resizeMode="cover"
-        style={{
-          width: '100%',
-          height: '100%',
-          borderRadius: 20,
-        }}
-      />
+      {item.imagem ? (
+        <Image
+          source={item.imagem}
+          resizeMode="cover"
+          style={{
+            width: '100%',
+            height: '100%',
+            borderRadius: 20,
+          }}
+        />
+      ) : (
+        <View style={{ width: '100%', height: '100%', borderRadius: 20, backgroundColor: '#401A65', justifyContent: 'center', padding: 12 }}>
+          <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>{item.nome}</Text>
+        </View>
+      )}
       <TouchableOpacity
         onPress={(e) => {
           e.stopPropagation && e.stopPropagation();
@@ -169,7 +161,7 @@ export default function MainScreen({ navigation }) {
             <Avatar source={FotoPerfil} />
           </TouchableOpacity>
           <WelcomeText style={{ color: theme.textPrimary }}>
-            Olá, <WelcomeText style={{ fontWeight: 'bold', color: theme.textPrimary }}>Júlio!</WelcomeText>
+            Olá, <WelcomeText style={{ fontWeight: 'bold', color: theme.textPrimary }}>{(user?.nome_usuario || 'visitante') + '!'}</WelcomeText>
           </WelcomeText>
 
           <TouchableOpacity
@@ -207,8 +199,9 @@ export default function MainScreen({ navigation }) {
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{ paddingLeft: 20, marginBottom: 25 }}
+          keyExtractor={(item) => item}
           renderItem={({ item }) => (
-            <View style={{
+            <TouchableOpacity onPress={() => setQuery(item)} style={{
               flexDirection: 'row', alignItems: 'center', backgroundColor: '#FF9100',
               paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20,
               marginRight: 10, gap: 6
@@ -217,49 +210,49 @@ export default function MainScreen({ navigation }) {
               <WelcomeText style={{ color: 'white', fontSize: 14, marginLeft: 0, fontWeight: '600' }}>
                 {item}
               </WelcomeText>
-            </View>
+            </TouchableOpacity>
           )}
         />
 
         {/* Seções filtradas */}
-        {filteredPublicas.length > 0 && (
+        {!error && filteredPublicas.length > 0 && (
           <>
             <SectionTitle style={{ color: theme.textPrimary }}>Faculdades Públicas</SectionTitle>
             <FlatList
-              data={filteredPublicas} renderItem={renderCurso} keyExtractor={item => item.id}
+              data={filteredPublicas} renderItem={renderCurso} keyExtractor={item => `${item.tipo}:${item.id}`}
               horizontal showsHorizontalScrollIndicator={false}
               contentContainerStyle={{ paddingLeft: 20, marginBottom: 25 }}
             />
           </>
         )}
 
-        {filteredPrivadas.length > 0 && (
+        {!error && filteredPrivadas.length > 0 && (
           <>
             <SectionTitle style={{ color: theme.textPrimary }}>Faculdades Privadas</SectionTitle>
             <FlatList
-              data={filteredPrivadas} renderItem={renderCurso} keyExtractor={item => item.id}
+              data={filteredPrivadas} renderItem={renderCurso} keyExtractor={item => `${item.tipo}:${item.id}`}
               horizontal showsHorizontalScrollIndicator={false}
               contentContainerStyle={{ paddingLeft: 20, marginBottom: 25 }}
             />
           </>
         )}
 
-        {filteredCursos.length > 0 && (
+        {!error && filteredCursos.length > 0 && (
           <>
             <SectionTitle style={{ color: theme.textPrimary }}>Cursos</SectionTitle>
             <FlatList
-              data={filteredCursos} renderItem={renderCurso} keyExtractor={item => item.id}
+              data={filteredCursos} renderItem={renderCurso} keyExtractor={item => `${item.tipo}:${item.id}`}
               horizontal showsHorizontalScrollIndicator={false}
               contentContainerStyle={{ paddingLeft: 20, marginBottom: 25 }}
             />
           </>
         )}
 
-        {filteredVestibulares.length > 0 && (
+        {!error && filteredVestibulares.length > 0 && (
           <>
             <SectionTitle style={{ color: theme.textPrimary }}>Vestibulares</SectionTitle>
             <FlatList
-              data={filteredVestibulares} keyExtractor={item => item.id} horizontal
+              data={filteredVestibulares} keyExtractor={item => `${item.tipo}:${item.id}`} horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={{ paddingLeft: 20, marginBottom: 25 }}
               renderItem={renderVestibularItem}
@@ -267,7 +260,10 @@ export default function MainScreen({ navigation }) {
           </>
         )}
 
-        {!anyResults && (
+        {loading && !anyResults && !error && <LoadingView message="Carregando..." />}
+        {error && <ErrorView error={error} onRetry={() => setReloadKey((k) => k + 1)} />}
+
+        {!loading && !error && !anyResults && (
           <View style={{ paddingHorizontal: 20, paddingTop: 30 }}>
             <Text style={{ color: theme.textSecondary, fontSize: 16 }}>
               Nenhum resultado encontrado para "<Text style={{ color: theme.textPrimary }}>{query}</Text>".
@@ -282,7 +278,7 @@ export default function MainScreen({ navigation }) {
 
       <TabBar>
         <TabItem><Ionicons name="search" size={24} color="white" /><TabText>Explorar</TabText></TabItem>
-        <TabItem onPress={() => navigation.navigate('Favorites', { favorites })}>
+        <TabItem onPress={() => navigation.navigate('Favorites')}>
           <Ionicons name="bookmark-outline" size={24} color="white" /><TabText>Salvos</TabText>
         </TabItem>
         <TabItem onPress={() => navigation.navigate('ProfileScreen')}>

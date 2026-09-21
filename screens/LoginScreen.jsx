@@ -9,23 +9,35 @@ import {
   KeyboardAvoidingView,
   Platform,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { colors, fonts, radius, spacing } from '../theme';
 import { Input, PrimaryButton, TextLink, BackButton, Divider } from '../components/UI';
+import { useAuth } from '../context/AuthContext';
+import { errorMessage } from '../src/api/client';
  
 export default function LoginScreen({ navigation }) {
+  const { login } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
  
   const handleLogin = async () => {
+    if (!username.trim() || !password) {
+      Alert.alert('Campos obrigatórios', 'Informe seu usuário/e-mail e a senha.');
+      return;
+    }
     setLoading(true);
-    setTimeout(() => {
+    try {
+      await login(username.trim(), password);
+      navigation.reset({ index: 0, routes: [{ name: 'MainScreen' }] });
+    } catch (e) {
+      Alert.alert('Não foi possível entrar', errorMessage(e));
+    } finally {
       setLoading(false);
-      navigation.navigate('MainScreen');
-    }, 1500);
+    }
   };
- 
+
   return (
     <SafeAreaView style={styles.safe}>
  

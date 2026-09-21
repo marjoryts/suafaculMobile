@@ -1,5 +1,5 @@
-import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import React, { useEffect } from 'react';
+import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import WelcomeScreen from '../screens/WelcomeScreen';
@@ -17,14 +17,33 @@ import VocationalIntroScreen from '../screens/VocationalIntroScreen';
 import FavoritesScreen from '../FavoritesScreen';
 import EditProfileScreen from '../EditProfileScreen';
 import VestibularScreen from '../VestibularScreen';
+import { LoadingView } from '../components/StateViews';
+import { useAuth } from '../context/AuthContext';
 
 const Stack = createNativeStackNavigator();
+const navigationRef = createNavigationContainerRef();
+const ROTAS_PUBLICAS = ['Welcome', 'Login', 'Register', 'VerifyEmail', 'ForgotPassword'];
 
 export default function AuthNavigator() {
+  const { status } = useAuth();
+
+  // Sessão encerrada (logout, ou token expirado no servidor) -> volta para a tela inicial.
+  useEffect(() => {
+    if (status === 'anonymous' && navigationRef.isReady()) {
+      const atual = navigationRef.getCurrentRoute()?.name;
+      if (atual && !ROTAS_PUBLICAS.includes(atual)) {
+        navigationRef.reset({ index: 0, routes: [{ name: 'Welcome' }] });
+      }
+    }
+  }, [status]);
+
+  // Enquanto restaura a sessão salva (rápido), mostra um carregando em vez de tela em branco.
+  if (status === 'loading') return <LoadingView message="Carregando..." style={{ flex: 1 }} />;
+
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
       <Stack.Navigator
-        initialRouteName="Welcome"
+        initialRouteName={status === 'authenticated' ? 'MainScreen' : 'Welcome'}
         screenOptions={{ headerShown: false, animation: 'slide_from_right' }}
       >
         <Stack.Screen name="MainScreen" component={MainScreen} />

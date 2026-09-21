@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { StatusBar, Switch, TouchableOpacity } from 'react-native';
+import { StatusBar, Switch, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import FotoPerfil from './assets/AvatarPhoto.png';
 import { useThemeContext } from './context/ThemeContext';
+import { useAuth } from './context/AuthContext';
 
 import {
   PurpleBackground, TopSection, HeaderRow, BackButton, EditProfileText,
@@ -12,6 +13,7 @@ import {
 
 export default function ProfileScreen({ navigation }) {
   const theme = useThemeContext();
+  const { user, logout } = useAuth();
   const [notifEnabled, setNotifEnabled] = useState(true);
 
   return (
@@ -29,7 +31,7 @@ export default function ProfileScreen({ navigation }) {
         </HeaderRow>
 
         <ProfileImage source={FotoPerfil} resizeMode="cover" />
-        <UserName>Júlio César</UserName>
+        <UserName>{user?.nome_usuario || ''}</UserName>
       </TopSection>
 
       <BottomSection bg={theme.bg}>
@@ -62,7 +64,7 @@ export default function ProfileScreen({ navigation }) {
         </MenuItem>
 
         {/* Favoritos → Main */}
-        <MenuItem onPress={() => navigation.navigate('MainScreen')}>
+        <MenuItem onPress={() => navigation.navigate('Favorites')}>
           <IconWrapper bgColor={theme.iconBg}>
             <Ionicons name="heart" size={24} color="white" />
           </IconWrapper>
@@ -89,7 +91,14 @@ export default function ProfileScreen({ navigation }) {
         </MenuItem>
 
         {/* Sair */}
-        <MenuItem>
+        <MenuItem
+          onPress={() =>
+            Alert.alert('Sair', 'Deseja encerrar a sessão?', [
+              { text: 'Cancelar', style: 'cancel' },
+              { text: 'Sair', style: 'destructive', onPress: () => logout() }, // o AuthNavigator volta para a tela inicial
+            ])
+          }
+        >
           <IconWrapper bgColor="#FF9100">
             <Ionicons name="log-out-outline" size={24} color="white" />
           </IconWrapper>

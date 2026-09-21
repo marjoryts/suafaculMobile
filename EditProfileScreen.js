@@ -8,16 +8,50 @@ import {
   Image,
   StyleSheet,
   SafeAreaView,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AvatarImg from './assets/AvatarPhoto.png';
 import { useThemeContext } from './context/ThemeContext';
+import { useAuth } from './context/AuthContext';
+import { errorMessage } from './src/api/client';
 
 export default function EditProfileScreen({ navigation }) {
-  const [name, setName] = useState('Júlio César');
-  const [email, setEmail] = useState('julio@example.com');
-  const [phone, setPhone] = useState('+55 11 9XXXX-XXXX');
+  const { user, updateProfile } = useAuth();
+  const [name, setName] = useState(user?.nome_usuario || '');
+  const [email, setEmail] = useState(user?.email || '');
+  const [phone, setPhone] = useState(user?.telefone || '');
   const [password, setPassword] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  // Salva no servidor (PATCH /api/v1/me) — só envia o que mudou.
+  const handleSave = async () => {
+    const dados = {};
+    if (name.trim() !== (user?.nome_usuario || '')) dados.nome_usuario = name.trim();
+    if (email.trim() !== (user?.email || '')) dados.email = email.trim();
+    if (phone.trim() !== (user?.telefone || '')) dados.telefone = phone.trim();
+    if (password) {
+      if (!currentPassword) {
+        Alert.alert('Senha atual', 'Informe sua senha atual para definir uma nova senha.');
+        return;
+      }
+      dados.nova_senha = password;
+      dados.senha_atual = currentPassword;
+    }
+    if (Object.keys(dados).length === 0) { navigation.goBack(); return; }
+    setSaving(true);
+    try {
+      await updateProfile(dados);
+      Alert.alert('Perfil atualizado', 'Suas alterações foram salvas.');
+      navigation.goBack();
+    } catch (e) {
+      Alert.alert('Não foi possível salvar', errorMessage(e));
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -27,8 +61,8 @@ export default function EditProfileScreen({ navigation }) {
             <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
               <Ionicons name="chevron-back" size={24} color="#fff" />
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => navigation.goBack()}>
-              <Text style={styles.saveText}>Salvar</Text>
+            <TouchableOpacity onPress={handleSave} disabled={saving}>
+              {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveText}>Salvar</Text>}
             </TouchableOpacity>
           </View>
 
@@ -39,7 +73,7 @@ export default function EditProfileScreen({ navigation }) {
             </View>
           </View>
 
-          <Text style={styles.nameTop}>Júlio César</Text>
+          <Text style={styles.nameTop}>{user?.nome_usuario || ''}</Text>
         </SafeAreaView>
       </View>
 
@@ -70,7 +104,7 @@ export default function EditProfileScreen({ navigation }) {
           style={styles.input}
         />
 
-        <Text style={styles.label}>Senha</Text>
+        <Text style={styles.label}>Nova senha</Text>
         <TextInput
           value={password}
           onChangeText={setPassword}
@@ -79,6 +113,20 @@ export default function EditProfileScreen({ navigation }) {
           placeholderTextColor="#9CA3AF"
           style={styles.input}
         />
+
+        {password ? (
+          <>
+            <Text style={styles.label}>Senha atual</Text>
+            <TextInput
+              value={currentPassword}
+              onChangeText={setCurrentPassword}
+              secureTextEntry
+              placeholder="Confirme sua senha atual"
+              placeholderTextColor="#9CA3AF"
+              style={styles.input}
+            />
+          </>
+        ) : null}
 
         <Text style={styles.label}>Telefone</Text>
         <TextInput

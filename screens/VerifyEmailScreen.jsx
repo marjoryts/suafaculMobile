@@ -9,6 +9,7 @@ import {
   ScrollView,
   Image,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { colors, fonts, radius, spacing } from '../theme';
 import { Input, PrimaryButton, TextLink, BackButton, Divider } from '../components/UI';
@@ -36,11 +37,7 @@ export default function VerifyEmailScreen({ navigation, route }) {
   };
 
   const handleVerify = () => {
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      // navigation?.navigate('Home');
-    }, 1500);
+    Alert.alert('Indisponível', 'A verificação de e-mail ainda não está disponível no servidor. Sua conta já está ativa: faça login normalmente.');
   };
 
   return (

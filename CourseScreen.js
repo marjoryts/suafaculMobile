@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   StatusBar,
   View,
@@ -12,6 +12,9 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeContext } from './context/ThemeContext';
+import { catalogApi } from './src/api/services';
+import { rotuloModalidade } from './src/mappers';
+import { LoadingView, ErrorView } from './components/StateViews';
 
 import {
   SafeContainer,
@@ -28,175 +31,11 @@ import {
   ButtonText,
 } from './courseStyles';
 
-// ─── Coordenadas das faculdades ───────────────────────────────────────────────
-const FACULDADE_LOCATIONS = {
-  '1': {
-    name: 'USP – Universidade de São Paulo',
-    address: 'Av. Prof. Mello Moraes, 1235 – Butantã, São Paulo',
-    latitude: -23.5629,
-    longitude: -46.7244,
-  },
-  '2': {
-    name: 'Fatec São Paulo',
-    address: 'Praça Cel. Fernando Prestes, 74 – Bom Retiro, São Paulo',
-    latitude: -23.5297,
-    longitude: -46.6343,
-  },
-  '3': {
-    name: 'Unicamp',
-    address: 'Rua Sérgio Buarque de Holanda, 651 – Campinas, SP',
-    latitude: -22.8184,
-    longitude: -47.0686,
-  },
-  '4': {
-    name: 'Unesp São Paulo',
-    address: 'Rua Dr. Bento Teobaldo Ferraz, 271 – São Paulo',
-    latitude: -23.5390,
-    longitude: -46.6609,
-  },
-  '5': {
-    name: 'Faculdade Piaget',
-    address: 'Av. Prudente de Morais, 750 – Itapevi, SP',
-    latitude: -23.5464,
-    longitude: -46.9346,
-  },
-  '6': {
-    name: 'Mackenzie',
-    address: 'Rua da Consolação, 896 – Consolação, São Paulo',
-    latitude: -23.5437,
-    longitude: -46.6536,
-  },
-  '7': {
-    name: 'PUC-SP',
-    address: 'Rua Monte Alegre, 984 – Perdizes, São Paulo',
-    latitude: -23.5325,
-    longitude: -46.6699,
-  },
-  '8': {
-    name: 'FGV São Paulo',
-    address: 'Av. 9 de Julho, 2029 – Jardim Paulista, São Paulo',
-    latitude: -23.5713,
-    longitude: -46.6536,
-  },
-};
-
-// ─── Dados extras por curso (duração, modalidade, onde encontrar) ─────────────
-const COURSE_EXTRA = {
-  '9': {
-    duracao: ['4 anos', '5 anos'],
-    modalidades: ['EAD', 'Presencial', 'Semi-Presencial'],
-    instituicoes: ['USP', 'Mackenzie', 'UMC'],
-  },
-  '10': {
-    duracao: ['6 anos'],
-    modalidades: ['Presencial'],
-    instituicoes: ['USP', 'PUC', 'Unicamp'],
-  },
-  '11': {
-    duracao: ['5 anos'],
-    modalidades: ['Presencial', 'EAD'],
-    instituicoes: ['PUC', 'Mackenzie', 'FGV'],
-  },
-  '12': {
-    duracao: ['4 anos'],
-    modalidades: ['EAD', 'Presencial', 'Semi-Presencial'],
-    instituicoes: ['FGV', 'Mackenzie', 'Fatec'],
-  },
-};
-
 // ─── Ícone por modalidade ─────────────────────────────────────────────────────
 const MODALITY_ICON = {
   'EAD': 'laptop-outline',
   'Presencial': 'school-outline',
   'Semi-Presencial': 'book-outline',
-};
-
-// ─── Descrições ───────────────────────────────────────────────────────────────
-const descriptions = {
-  '9': {
-    titulo: 'Engenharia de Software',
-    aprendizado:
-      'Formação voltada para o desenvolvimento de sistemas robustos e escaláveis. Você aprenderá a modelar requisitos, projetar arquiteturas, aplicar padrões de projeto, implementar testes automatizados, integrar sistemas e gerenciar o ciclo de vida do software. O curso também aborda metodologias ágeis, DevOps, segurança da informação e práticas de qualidade de software.',
-    disciplinas:
-      'Algoritmos; Estruturas de Dados; Programação Orientada a Objetos; Engenharia de Requisitos; Modelagem UML; Banco de Dados; Arquitetura de Software; Testes e Qualidade; Integração Contínua e DevOps; Segurança de Software; Gestão de Projetos de Software; UX e Engenharia de Usabilidade.',
-  },
-  '10': {
-    titulo: 'Medicina',
-    aprendizado:
-      'Formação completa para atuação clínica e hospitalar, com ênfase em diagnóstico, tratamento e prevenção de doenças. O curso combina disciplinas básicas com treinamento prático em laboratórios, estágios em ambulatórios e hospitais.',
-    disciplinas:
-      'Anatomia; Fisiologia; Bioquímica; Farmacologia; Patologia; Microbiologia; Clínica Médica; Cirurgia; Pediatria; Ginecologia e Obstetrícia; Saúde Pública; Estágio Supervisionado.',
-  },
-  '11': {
-    titulo: 'Direito',
-    aprendizado:
-      'Formação para atuação jurídica em diversas áreas: contenciosa, consultiva, pública e privada. O curso desenvolve capacidade de interpretação e aplicação das normas, argumentação jurídica, redação de peças processuais e negociação.',
-    disciplinas:
-      'Teoria Geral do Direito; Direito Constitucional; Direito Civil; Direito Penal; Direito Administrativo; Direito do Trabalho; Direito Tributário; Processo Civil; Processo Penal; Filosofia do Direito; Prática Jurídica.',
-  },
-  '12': {
-    titulo: 'Administração',
-    aprendizado:
-      'Formação focada em gestão de organizações, planejamento estratégico, análise financeira e liderança. O curso prepara o aluno para identificar oportunidades de negócio, otimizar processos, gerir equipes e tomar decisões baseadas em dados.',
-    disciplinas:
-      'Introdução à Administração; Contabilidade; Finanças; Marketing; Gestão de Pessoas; Economia; Estatística Aplicada; Gestão de Operações; Planejamento Estratégico; Empreendedorismo; Estágio Supervisionado.',
-  },
-  '1': {
-    titulo: 'USP',
-    aprendizado:
-      'A Universidade de São Paulo é referência nacional em ensino, pesquisa e extensão. Os cursos oferecem formação acadêmica sólida, com forte integração entre pesquisa e prática. Os alunos têm acesso a laboratórios avançados, bibliotecas extensas e programas de iniciação científica.',
-    disciplinas:
-      'Variedade ampla conforme o curso; ênfase em pesquisa, disciplinas optativas avançadas, projetos de extensão e atividades de iniciação científica.',
-  },
-  '2': {
-    titulo: 'Fatec',
-    aprendizado:
-      'As Faculdades de Tecnologia (Fatec) são conhecidas pela formação prática e alinhada ao mercado. O foco está em competências técnicas, resolução de problemas reais e integração com empresas locais.',
-    disciplinas:
-      'Disciplinas técnicas e aplicadas; projetos integradores; estágios supervisionados; ênfase em tecnologia, inovação e empregabilidade.',
-  },
-  '3': {
-    titulo: 'Unicamp',
-    aprendizado:
-      'A Unicamp está entre as melhores universidades da América Latina, reconhecida por sua produção científica e inovação. Oferece formação de excelência com laboratórios de ponta, pesquisa e parcerias internacionais.',
-    disciplinas:
-      'Grade curricular completa conforme o curso; forte componente de pesquisa; iniciação científica; projetos de inovação e extensão universitária.',
-  },
-  '4': {
-    titulo: 'Unesp',
-    aprendizado:
-      'A Unesp possui campi em diversas cidades do estado de São Paulo, oferecendo ensino público de qualidade. É reconhecida pela diversidade de cursos e pelo compromisso com pesquisa e extensão comunitária.',
-    disciplinas:
-      'Disciplinas fundamentais e específicas por área; pesquisa científica; extensão universitária; estágios e projetos aplicados.',
-  },
-  '5': {
-    titulo: 'Faculdade Piaget',
-    aprendizado:
-      'A Faculdade Piaget oferece formação com foco regional e aplicada, priorizando a empregabilidade e a conexão com o mercado local. Combina teoria e prática por meio de laboratórios, projetos integradores e parcerias com empresas da região.',
-    disciplinas:
-      'Currículo com disciplinas práticas e teóricas; projetos de extensão; estágios supervisionados; oficinas de empreendedorismo e desenvolvimento profissional.',
-  },
-  '6': {
-    titulo: 'Mackenzie',
-    aprendizado:
-      'O Mackenzie combina tradição acadêmica com forte atuação no mercado. O aluno encontra formação que equilibra conteúdo teórico sólido e experiências práticas, laboratórios, projetos interdisciplinares e iniciação científica.',
-    disciplinas:
-      'Disciplinas fundamentais e avançadas conforme o curso; pesquisa aplicada, projetos de extensão, programas de empreendedorismo e incubadoras.',
-  },
-  '7': {
-    titulo: 'PUC',
-    aprendizado:
-      'A PUC é reconhecida pela formação humanista e pela forte atuação em extensão universitária. O curso valoriza o pensamento crítico, a responsabilidade social e a interdisciplinaridade.',
-    disciplinas:
-      'Grade curricular com base teórica robusta, disciplinas optativas interdisciplinares, projetos de extensão; ênfase em formação crítica, ética profissional e atuação comunitária.',
-  },
-  '8': {
-    titulo: 'FGV',
-    aprendizado:
-      'A Fundação Getulio Vargas é referência em administração, economia e direito, com forte orientação ao mercado e à formação executiva. Enfatiza análise quantitativa, estudos de caso e competências estratégicas.',
-    disciplinas:
-      'Disciplinas com forte componente quantitativo e analítico; estudos de caso empresariais; estratégia, finanças e governança; laboratórios de inovação e empreendedorismo.',
-  },
 };
 
 // ─── URL do mapa estático ─────────────────────────────────────────────────────
@@ -372,18 +211,54 @@ function CourseExtraBlock({ extra, theme }) {
 export default function CourseScreen({ route, navigation }) {
   const theme = useThemeContext();
   const { item, type } = route.params || {};
+  const [detalhe, setDetalhe] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const info = descriptions[item?.id] || {
-    titulo: item?.nome || 'Detalhes',
-    aprendizado: 'Informações gerais sobre o curso ou instituição.',
-    disciplinas: 'Consulte a grade curricular específica da instituição.',
+  // Detalhes vêm da API (/faculdades/<id> ou /cursos/<id>), não mais de tabelas fixas no app.
+  const carregar = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const d = type === 'curso' ? await catalogApi.curso(item.id) : await catalogApi.faculdade(item.id);
+      setDetalhe(d);
+    } catch (e) {
+      setError(e);
+    } finally {
+      setLoading(false);
+    }
+  }, [item?.id, type]);
+
+  useEffect(() => { carregar(); }, [carregar]);
+
+  const info = {
+    titulo: detalhe?.nome_curto || detalhe?.nome || item?.nome || 'Detalhes',
+    aprendizado: detalhe?.descricao || 'Informações gerais sobre o curso ou instituição.',
+    disciplinas:
+      (type === 'curso' ? detalhe?.disciplinas : detalhe?.diferenciais) ||
+      (type === 'curso'
+        ? 'Consulte a grade curricular específica da instituição.'
+        : 'Consulte a instituição para conhecer seus diferenciais.'),
   };
 
   const locationData =
-    type === 'faculdade' ? FACULDADE_LOCATIONS[item?.id] : null;
+    type === 'faculdade' && detalhe?.latitude != null && detalhe?.longitude != null
+      ? {
+          name: detalhe.nome,
+          address: detalhe.endereco || [detalhe.cidade, detalhe.uf].filter(Boolean).join(' – '),
+          latitude: detalhe.latitude,
+          longitude: detalhe.longitude,
+        }
+      : null;
 
   const courseExtra =
-    type === 'curso' ? COURSE_EXTRA[item?.id] || null : null;
+    type === 'curso' && detalhe
+      ? {
+          duracao: detalhe.duracoes || [],
+          modalidades: (detalhe.modalidades || []).map(rotuloModalidade),
+          instituicoes: (detalhe.instituicoes || []).map((i) => i.nome_curto || i.nome),
+        }
+      : null;
 
   return (
     <SafeContainer style={{ backgroundColor: theme.bg }}>
@@ -405,10 +280,13 @@ export default function CourseScreen({ route, navigation }) {
       <ContentScroll showsVerticalScrollIndicator={false}>
 
         <ImageContainer>
-          <CourseImage source={item?.imagem} resizeMode="cover" />
+          {item?.imagem ? <CourseImage source={item.imagem} resizeMode="cover" /> : null}
         </ImageContainer>
 
-        {type === 'curso' ? (
+        {loading ? <LoadingView message="Carregando detalhes..." /> : null}
+        {!loading && error ? <ErrorView error={error} onRetry={carregar} /> : null}
+
+        {!loading && !error && (type === 'curso' ? (
           <>
             {/* Bloco de duração / modalidade / onde — exclusivo de cursos */}
             <CourseExtraBlock extra={courseExtra} theme={theme} />
@@ -442,7 +320,7 @@ export default function CourseScreen({ route, navigation }) {
               <FaculdadeMap locationData={locationData} theme={theme} />
             )}
           </>
-        )}
+        ))}
 
       </ContentScroll>
 

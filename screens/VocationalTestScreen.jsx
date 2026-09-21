@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,29 +7,15 @@ import {
   TouchableOpacity,
   Animated,
   Dimensions,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeContext } from '../context/ThemeContext';
+import { vocationalApi } from '../src/api/services';
+import { errorMessage } from '../src/api/client';
+import { LoadingView, ErrorView } from '../components/StateViews';
 
 const { width } = Dimensions.get('window');
-
-const QUESTIONS = [
-  "Prefiro criar novas ideias do que seguir instruções prontas.",
-  "Gosto de ajudar pessoas a resolver seus problemas.",
-  "Sinto interesse em aprender sobre tecnologia e inovação.",
-  "Prefiro trabalhar em equipe a trabalhar sozinho(a).",
-  "Gosto de organizar tarefas, documentos ou informações.",
-  "Tenho facilidade para explicar assuntos para outras pessoas.",
-  "Sinto curiosidade sobre como as coisas funcionam.",
-  "Prefiro atividades práticas a atividades teóricas.",
-  "Gosto de analisar dados antes de tomar decisões.",
-  "Tenho interesse por atividades artísticas e criativas.",
-  "Sinto-me confortável ao liderar grupos ou projetos.",
-  "Gosto de pesquisar e aprofundar meus conhecimentos.",
-  "Prefiro desafios que exigem raciocínio lógico.",
-  "Tenho interesse em atividades que impactam positivamente a sociedade.",
-  "Sinto motivação ao aprender algo completamente novo.",
-];
 
 const OPTIONS = [
   { label: 'Concordo plenamente',   color: '#448236', value: 5 },
@@ -44,9 +30,29 @@ export default function VocationalTestScreen({ navigation }) {
   const [current, setCurrent] = useState(0);
   const [answers, setAnswers] = useState({});
   const [selected, setSelected] = useState(null);
+  const [questions, setQuestions] = useState([]);
+  const [loadingQ, setLoadingQ] = useState(true);
+  const [errorQ, setErrorQ] = useState(null);
+  const [sending, setSending] = useState(false);
   const progressAnim = useRef(new Animated.Value(0)).current;
 
-  const total = QUESTIONS.length;
+  const total = questions.length;
+
+  // As perguntas vêm da API (mesmo instrumento salvo no banco).
+  const carregar = useCallback(async () => {
+    setLoadingQ(true);
+    setErrorQ(null);
+    try {
+      const d = await vocationalApi.perguntas();
+      setQuestions(d.perguntas);
+    } catch (e) {
+      setErrorQ(e);
+    } finally {
+      setLoadingQ(false);
+    }
+  }, []);
+
+  useEffect(() => { carregar(); }, [carregar]);
 
   const animateProgress = (val) => {
     Animated.timing(progressAnim, {
@@ -58,8 +64,8 @@ export default function VocationalTestScreen({ navigation }) {
 
   const handleSelect = (option) => setSelected(option.value);
 
-  const handleNext = () => {
-    if (selected === null) return;
+  const handleNext = async () => {
+    if (selected === null || sending) return;
     const newAnswers = { ...answers, [current]: selected };
     setAnswers(newAnswers);
     setSelected(null);
@@ -67,7 +73,20 @@ export default function VocationalTestScreen({ navigation }) {
       animateProgress((current + 2) / total);
       setCurrent(current + 1);
     } else {
-      navigation?.navigate('VocationalResult', { answers: newAnswers });
+      // Envia as respostas ao servidor (salvas em teste_vocacional_resultados) e mostra o resultado real.
+      const respostas = {};
+      questions.forEach((q, i) => { respostas[q.id] = newAnswers[i]; });
+      setSending(true);
+      try {
+        const resultado = await vocationalApi.enviar(respostas);
+        navigation?.navigate('VocationalResult', { resultado });
+      } catch (e) {
+        Alert.alert('Não foi possível enviar o teste', errorMessage(e));
+        setAnswers(answers);
+        setSelected(newAnswers[current]);
+      } finally {
+        setSending(false);
+      }
     }
   };
 
@@ -84,6 +103,24 @@ export default function VocationalTestScreen({ navigation }) {
   });
 
   const isLast = current + 1 === total;
+
+  if (loadingQ || errorQ) {
+    return (
+      <SafeAreaView style={[styles.safe, { backgroundColor: theme.bg }]}>
+        <View style={styles.header}>
+          <TouchableOpacity
+            onPress={() => navigation?.goBack()}
+            style={[styles.backBtn, { borderColor: theme.backBtnColor, backgroundColor: theme.backBtnBg }]}
+          >
+            <Ionicons name="chevron-back" size={22} color={theme.backBtnColor} />
+          </TouchableOpacity>
+          <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>Teste Vocacional</Text>
+          <View style={{ width: 36 }} />
+        </View>
+        {loadingQ ? <LoadingView message="Carregando perguntas..." /> : <ErrorView error={errorQ} onRetry={carregar} />}
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.bg }]}>
@@ -106,7 +143,7 @@ export default function VocationalTestScreen({ navigation }) {
       </View>
 
       <View style={styles.body}>
-        <Text style={[styles.question, { color: theme.titleColor }]}>{QUESTIONS[current]}</Text>
+        <Text style={[styles.question, { color: theme.titleColor }]}>{questions[current]?.texto}</Text>
 
         <View style={styles.options}>
           {OPTIONS.map((opt) => (
@@ -139,7 +176,7 @@ export default function VocationalTestScreen({ navigation }) {
           activeOpacity={0.85}
           disabled={selected === null}
         >
-          <Text style={styles.verBtnText}>{isLast ? 'Ver resultado' : 'Próxima'}</Text>
+          <Text style={styles.verBtnText}>{sending ? 'Enviando...' : isLast ? 'Ver resultado' : 'Próxima'}</Text>
         </TouchableOpacity>
 
         <View style={styles.pagination}>

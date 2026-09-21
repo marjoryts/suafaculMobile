@@ -1,7 +1,10 @@
-import React from 'react';
-import { View, FlatList, Image, TouchableOpacity, Text } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, FlatList, Image, TouchableOpacity, Text, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeContext } from './context/ThemeContext';
+import { useFavorites } from './context/FavoritesContext';
+import { errorMessage } from './src/api/client';
+import { LoadingView, ErrorView } from './components/StateViews';
 
 import {
   SafeContainer,
@@ -20,7 +23,10 @@ import {
 
 export default function FavoritesScreen({ route, navigation }) {
   const theme = useThemeContext();
-  const favorites = route.params?.favorites || [];
+  const { items: favorites, loading, error, loaded, refresh, toggle } = useFavorites();
+
+  // Sempre confirma com o servidor ao abrir a tela.
+  useEffect(() => { refresh(); }, [refresh]);
 
   // agrupa por tipo
   const faculdades = favorites.filter(f => f.tipo === 'faculdade');
@@ -29,7 +35,7 @@ export default function FavoritesScreen({ route, navigation }) {
 
   const renderItem = (item) => (
     <TouchableOpacity
-      key={item.id}
+      key={`${item.tipo}:${item.id}`}
       onPress={() => {
         if (item.tipo === 'vestibular') {
           navigation.navigate('VestibularScreen', { item });
@@ -59,9 +65,12 @@ export default function FavoritesScreen({ route, navigation }) {
         </View>
       </View>
 
-      <TouchableOpacity onPress={() => {
-        // remover: atualiza a lista retornando para MainScreen (simples: volta com sinal)
-        navigation.navigate('MainScreen', { removeFavoriteId: item.id });
+      <TouchableOpacity onPress={async () => {
+        try {
+          await toggle(item); // remove no servidor
+        } catch (e) {
+          Alert.alert('Não foi possível remover', errorMessage(e));
+        }
       }}>
         <Ionicons name="trash-outline" size={22} color={theme.textMuted} />
       </TouchableOpacity>
@@ -78,6 +87,8 @@ export default function FavoritesScreen({ route, navigation }) {
       </HeaderRow>
 
       <ContentScroll showsVerticalScrollIndicator={false}>
+        {loading && !loaded ? <LoadingView message="Carregando favoritos..." /> : null}
+        {error && !loaded ? <ErrorView error={error} onRetry={refresh} /> : null}
         <SectionTitle style={{ color: theme.textPrimary }}>Faculdades Favoritas</SectionTitle>
         {faculdades.length === 0 ? <DescriptionText style={{ color: theme.textSecondary }}>Nenhuma faculdade favoritada.</DescriptionText> : faculdades.map(renderItem)}
 
