@@ -2,7 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 import { Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authApi, meApi } from '../src/api/services';
-import { setAuthToken, setSessionExpiredHandler, isNetworkError } from '../src/api/client';
+import { setTokens, setSessionExpiredHandler, setTokensChangedHandler, isNetworkError } from '../src/api/client';
 import { tokenStorage } from '../src/storage';
 
 const AuthContext = createContext(null);
@@ -18,15 +18,16 @@ export function AuthProvider({ children }) {
   }, []);
 
   const clearSession = useCallback(async () => {
-    setAuthToken(null);
+    setTokens(null);
     setUser(null);
     setStatus('anonymous');
     try { await tokenStorage.clear(); await AsyncStorage.removeItem(USER_KEY); } catch { /* ignora */ }
   }, []);
 
-  const startSession = useCallback(async ({ token, usuario }) => {
-    setAuthToken(token);
-    await tokenStorage.set(token);
+  // `tokens` = { access, refresh } emitidos pelo backend no login/cadastro.
+  const startSession = useCallback(async ({ tokens, usuario }) => {
+    setTokens(tokens);
+    await tokenStorage.set(tokens);
     await guardarUsuario(usuario);
     setStatus('authenticated');
   }, [guardarUsuario]);
@@ -40,11 +41,13 @@ export function AuthProvider({ children }) {
   // Ao abrir o app: restaura a sessão salva.
   useEffect(() => {
     setSessionExpiredHandler(expirou);
+    // O cliente renova o access token sozinho; guardamos o par novo para a próxima abertura.
+    setTokensChangedHandler((t) => tokenStorage.set(t).catch(() => {}));
     (async () => {
-      let token = null;
-      try { token = await tokenStorage.get(); } catch { /* ignora */ }
-      if (!token) { setStatus('anonymous'); return; }
-      setAuthToken(token);
+      let tokens = null;
+      try { tokens = await tokenStorage.get(); } catch { /* ignora */ }
+      if (!tokens) { setStatus('anonymous'); return; }
+      setTokens(tokens);
       try {
         await guardarUsuario(await meApi.get());
         setStatus('authenticated');
@@ -58,7 +61,7 @@ export function AuthProvider({ children }) {
           } catch { /* ignora */ }
         }
         // 401 já foi tratado por `expirou`; qualquer outro caso: pede login.
-        setAuthToken(null);
+        setTokens(null);
         setStatus('anonymous');
       }
     })();

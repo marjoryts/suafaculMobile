@@ -17,13 +17,22 @@ import { LoadingView, ErrorView } from '../components/StateViews';
 
 const { width } = Dimensions.get('window');
 
-const OPTIONS = [
-  { label: 'Concordo plenamente',   color: '#448236', value: 5 },
-  { label: 'Concordo parcialmente', color: '#7BC142', value: 4 },
-  { label: 'Concordo',              color: '#FFE900', value: 3, textColor: '#757575' },
-  { label: 'Discordo parcialmente', color: '#F8962C', value: 2 },
-  { label: 'Discordo plenamente',   color: '#F05435', value: 1 },
+// Cores dos botões (mesmo visual de antes), aplicadas na ordem das alternativas.
+const CORES_OPCOES = [
+  { color: '#448236' },
+  { color: '#7BC142' },
+  { color: '#FFE900', textColor: '#757575' },
+  { color: '#F8962C' },
+  { color: '#F05435' },
 ];
+
+// Alternativas REAIS da pergunta (vêm da API, as mesmas do site): o valor enviado é o id
+// da alternativa ("a", "b"...) e a pontuação é calculada no servidor.
+const opcoesDa = (pergunta) => (pergunta?.opcoes || []).map((o, i) => ({
+  ...CORES_OPCOES[i % CORES_OPCOES.length],
+  label: o.texto,
+  value: o.id,
+}));
 
 export default function VocationalTestScreen({ navigation }) {
   const theme = useThemeContext();
@@ -146,7 +155,7 @@ export default function VocationalTestScreen({ navigation }) {
         <Text style={[styles.question, { color: theme.titleColor }]}>{questions[current]?.texto}</Text>
 
         <View style={styles.options}>
-          {OPTIONS.map((opt) => (
+          {opcoesDa(questions[current]).map((opt) => (
             <TouchableOpacity
               key={opt.value}
               style={[
